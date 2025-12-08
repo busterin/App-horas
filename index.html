@@ -2,161 +2,180 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Horas de proyecto</title>
+  <title>App de horas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
   <header class="app-header">
-    <img src="images/logo.png" alt="Logo de la empresa" class="app-logo" />
-    <h1>Registro de horas</h1>
+    <h1>Control de horas</h1>
+    <nav class="tabs">
+      <button class="tab-button active" data-tab="registrar-horas">Registrar horas</button>
+      <button class="tab-button" data-tab="ver-proyectos">Ver todos los proyectos</button>
+      <button class="tab-button" data-tab="gestionar-proyectos">Gestionar proyectos</button>
+    </nav>
   </header>
 
-  <main class="app-main">
+  <main>
+    <!-- TAB REGISTRAR HORAS -->
+    <section id="registrar-horas" class="tab-content active">
+      <h2>Registrar horas</h2>
 
-    <!-- TABS -->
-    <nav class="tabs">
-      <button type="button" id="tabMain" class="tab active">
-        Registro y resumen
-      </button>
-      <button type="button" id="tabProjects" class="tab">
-        Ver todos los proyectos
-      </button>
-      <button type="button" id="tabManageProjects" class="tab">
-        Gestionar proyectos
-      </button>
-    </nav>
-
-    <!-- VISTA PRINCIPAL -->
-    <div id="mainView">
-      <section class="card">
-        <h2>Introducir horas</h2>
-
-        <!-- Trabajador -->
-        <label class="field">
-          <span>Trabajador</span>
-          <select id="workerSelect"></select>
-        </label>
-
-        <!-- Foto del trabajador -->
-        <div class="worker-photo-wrapper">
-          <img id="workerPhoto" class="worker-photo" alt="Foto del trabajador seleccionado" />
+      <form id="form-horas" class="card">
+        <div class="form-row">
+          <label for="input-fecha">Fecha</label>
+          <input type="date" id="input-fecha" required />
         </div>
 
-        <!-- Empresa -->
-        <label class="field">
-          <span>Empresa</span>
-          <select id="companySelect"></select>
-        </label>
+        <div class="form-row">
+          <label for="select-mes-horas">Mes</label>
+          <select id="select-mes-horas" required>
+            <option value="" disabled selected>Selecciona un mes</option>
+          </select>
+        </div>
 
-        <!-- Proyecto + mes -->
-        <label class="field" id="projectFieldWrapper">
-          <span>Proyecto</span>
-          <div class="inline-field">
-            <select id="projectSelect"></select>
-            <button type="button" id="addProjectBtn" class="btn-secondary">+</button>
-          </div>
-          <div id="projectMonthLabel" class="project-month-label">
-            Selecciona empresa y semana para ver los proyectos del mes.
-          </div>
-        </label>
+        <div class="form-row">
+          <label for="select-semana-horas">Semana</label>
+          <select id="select-semana-horas" required>
+            <option value="" disabled selected>Selecciona una semana</option>
+            <option value="1">Semana 1</option>
+            <option value="2">Semana 2</option>
+            <option value="3">Semana 3</option>
+            <option value="4">Semana 4</option>
+            <option value="5">Semana 5</option>
+          </select>
+        </div>
 
-        <!-- Semana -->
-        <label class="field">
-          <span>Semana</span>
-          <input type="week" id="weekInput" />
-        </label>
+        <div class="form-row">
+          <label for="select-proyecto-horas">Proyecto</label>
+          <select id="select-proyecto-horas" required>
+            <option value="" disabled selected>Selecciona primero mes y semana</option>
+          </select>
+        </div>
 
-        <!-- Horas -->
-        <label class="field">
-          <span>Horas trabajadas</span>
-          <input type="number" id="hoursInput" min="0" step="0.25" inputmode="decimal" />
-        </label>
+        <div class="form-row">
+          <label for="input-horas">Horas</label>
+          <input type="number" id="input-horas" min="0" step="0.25" required />
+        </div>
 
-        <button type="button" id="saveBtn" class="btn-primary full-width">
-          Guardar horas
-        </button>
+        <div class="form-row">
+          <label for="input-descripcion">Descripción</label>
+          <textarea id="input-descripcion" rows="2" placeholder="Opcional"></textarea>
+        </div>
 
-        <p id="message" class="message" aria-live="polite"></p>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </form>
+
+      <section class="card">
+        <h3>Últimos registros</h3>
+        <table id="tabla-horas">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Mes</th>
+              <th>Semana</th>
+              <th>Empresa/Proyecto prin.</th>
+              <th>Proyecto</th>
+              <th>Horas</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rellenado por JS -->
+          </tbody>
+        </table>
       </section>
+    </section>
 
-      <!-- RESUMEN RÁPIDO -->
-      <section class="card">
-        <h2>Resumen rápido</h2>
-
-        <div class="filters">
-          <label class="field small">
-            <span>Trabajador</span>
-            <select id="filterWorker"></select>
-          </label>
-
-          <label class="field small">
-            <span>Empresa</span>
-            <select id="filterCompany"></select>
-          </label>
-
-          <label class="field small">
-            <span>Semana</span>
-            <input type="week" id="filterWeek" />
-          </label>
-
-          <button type="button" id="filterBtn" class="btn-secondary">Filtrar</button>
+    <!-- TAB VER PROYECTOS -->
+    <section id="ver-proyectos" class="tab-content">
+      <h2>Ver todos los proyectos</h2>
+      <div class="card">
+        <div class="actions-row">
+          <div>
+            <label for="filtro-mes-proyectos">Filtrar por mes</label>
+            <select id="filtro-mes-proyectos">
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+          <div class="export-buttons">
+            <button id="btn-export-excel" class="btn-secondary">Exportar a Excel</button>
+            <button id="btn-export-pdf" class="btn-secondary">Exportar a PDF</button>
+          </div>
         </div>
 
-        <div class="table-wrapper">
-          <table>
+        <div id="contenedor-tabla-proyectos">
+          <table id="tabla-proyectos" class="tabla-estilo">
             <thead>
               <tr>
-                <th>Trabajador</th>
-                <th>Empresa</th>
+                <th>Empresa/Proyecto prin.</th>
                 <th>Proyecto</th>
-                <th>Semana</th>
-                <th>Horas</th>
-                <th>Acciones</th>
+                <th>Meses</th>
               </tr>
             </thead>
-            <tbody id="entriesTableBody"></tbody>
+            <tbody>
+              <!-- Rellenado por JS -->
+            </tbody>
           </table>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- EXPORTAR EXCEL -->
+    <!-- TAB GESTIONAR PROYECTOS -->
+    <section id="gestionar-proyectos" class="tab-content">
+      <h2>Gestionar proyectos</h2>
+
+      <form id="form-proyecto" class="card">
+        <input type="hidden" id="proyecto-id" />
+
+        <div class="form-row">
+          <label for="input-nombre-proyecto">Nombre del proyecto</label>
+          <input type="text" id="input-nombre-proyecto" required />
+        </div>
+
+        <div class="form-row">
+          <label for="select-empresa">Empresa/Proyecto prin.</label>
+          <select id="select-empresa" required>
+            <!-- Opciones generadas por JS -->
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="select-meses-proyecto">Meses asociados</label>
+          <select id="select-meses-proyecto" multiple size="4" required>
+            <!-- Meses generados por JS -->
+          </select>
+          <small>Pulsa Ctrl/Cmd para seleccionar varios meses.</small>
+        </div>
+
+        <div class="buttons-row">
+          <button type="submit" class="btn-primary" id="btn-guardar-proyecto">Guardar proyecto</button>
+          <button type="button" class="btn-ghost" id="btn-limpiar-form">Limpiar</button>
+        </div>
+      </form>
+
       <section class="card">
-        <h2>Exportar</h2>
-        <button type="button" id="exportBtn" class="btn-primary full-width">
-          Exportar a Excel (CSV)
-        </button>
-        <p class="hint">Se descargará un archivo CSV compatible con Excel y Google Sheets.</p>
+        <h3>Listado de proyectos</h3>
+        <table id="tabla-gestion-proyectos" class="tabla-estilo">
+          <thead>
+            <tr>
+              <th>Empresa/Proyecto prin.</th>
+              <th>Proyecto</th>
+              <th>Meses</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Rellenado por JS -->
+          </tbody>
+        </table>
       </section>
-    </div>
-
-    <!-- PESTAÑA: VER TODOS LOS PROYECTOS -->
-    <div id="projectsView" class="hidden">
-      <section class="card">
-        <h2>Todos los proyectos</h2>
-        <p class="hint">Vista agrupada por empresa y proyecto, con totales y edición/borrado.</p>
-
-        <button type="button" id="exportPdfBtn" class="btn-secondary full-width">
-          Exportar a PDF (vista proyectos)
-        </button>
-
-        <div id="companyView" class="company-view"></div>
-      </section>
-    </div>
-
-    <!-- PESTAÑA: GESTIONAR PROYECTOS POR MESES -->
-    <div id="manageProjectsView" class="hidden">
-      <section class="card">
-        <h2>Gestionar proyectos por meses</h2>
-        <p class="hint">
-          Aquí puedes ver en qué meses está cada proyecto y modificar sus meses asociados.
-        </p>
-        <div id="manageProjectsContainer" class="company-view"></div>
-      </section>
-    </div>
-
+    </section>
   </main>
+
+  <footer class="app-footer">
+    <small>Datos guardados en este dispositivo (localStorage).</small>
+  </footer>
 
   <script src="script.js"></script>
 </body>
