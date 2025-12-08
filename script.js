@@ -8,15 +8,28 @@ const STORAGE_KEYS = {
 // Empresas disponibles
 const COMPANIES = ["Monognomo", "Neozink", "Yurmuvi", "General"];
 
-// Trabajadores iniciales (cámbialos por los vuestros reales)
+// Trabajadores iniciales con iconos
 const DEFAULT_WORKERS = [
-  "Ana",
-  "Carlos",
-  "Lucía",
-  "Marcos"
+  "Alba 🐣",
+  "Buster 🤖",
+  "Castri 🦊",
+  "Celia 🌻",
+  "Elías 🎧",
+  "Genio 🧠",
+  "Inés 🐱",
+  "Keila 🐬",
+  "Laura 🍀",
+  "Lorena 🌙",
+  "Maider 🔆",
+  "María C 🌸",
+  "María M ⭐",
+  "Rober 🐺",
+  "Sandra 🔮",
+  "Sara 🐼",
+  "Voby 🚀"
 ];
 
-// Proyectos iniciales por empresa (ejemplos, aquí puedes meter los reales)
+// Proyectos iniciales por empresa (de momento de ejemplo)
 const DEFAULT_PROJECTS_BY_COMPANY = {
   Monognomo: ["Mono Proyecto 1", "Mono Proyecto 2"],
   Neozink: ["Neo Proyecto 1", "Neo Proyecto 2"],
@@ -26,14 +39,22 @@ const DEFAULT_PROJECTS_BY_COMPANY = {
 
 // ---------- Utilidades de almacenamiento ----------
 
+function deepClone(value) {
+  // Por si algún navegador no soporta structuredClone
+  try {
+    return structuredClone(value);
+  } catch {
+    return JSON.parse(JSON.stringify(value));
+  }
+}
+
 function loadFromStorage(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : structuredClone(fallback);
+    return raw ? JSON.parse(raw) : deepClone(fallback);
   } catch (e) {
     console.error("Error leyendo localStorage", e);
-    // Devolvemos una copia del fallback para no mutarlo
-    return structuredClone(fallback);
+    return deepClone(fallback);
   }
 }
 
@@ -220,13 +241,11 @@ function handleSaveHours() {
 
   showMessage("Horas guardadas correctamente.", "ok");
 
-  // Limpiar horas
   hoursInput.value = "";
-  // Actualizar tabla
   renderTable();
 }
 
-// ---------- Tabla de resumen ----------
+// ---------- Tabla de resumen plano ----------
 
 function renderTable(filter = {}) {
   const tbody = document.getElementById("entriesTableBody");
@@ -278,6 +297,121 @@ function renderTable(filter = {}) {
   });
 }
 
+// ---------- Vista agrupada por empresas (con totales) ----------
+
+function renderCompanyView() {
+  const container = document.getElementById("companyView");
+  const entries = loadEntries();
+
+  container.innerHTML = "";
+
+  if (entries.length === 0) {
+    const p = document.createElement("p");
+    p.textContent = "No hay registros todavía.";
+    container.appendChild(p);
+    return;
+  }
+
+  // Agrupar por empresa y proyecto
+  const grouped = {};
+  entries.forEach(e => {
+    if (!grouped[e.company]) grouped[e.company] = {};
+    if (!grouped[e.company][e.project]) grouped[e.company][e.project] = [];
+    grouped[e.company][e.project].push(e);
+  });
+
+  const companies = Object.keys(grouped).sort((a, b) =>
+    a.localeCompare(b, "es")
+  );
+
+  let globalTotal = 0;
+
+  companies.forEach(company => {
+    const block = document.createElement("div");
+    block.className = "company-block";
+
+    const h3 = document.createElement("h3");
+    h3.textContent = company;
+    block.appendChild(h3);
+
+    const projects = Object.keys(grouped[company]).sort((a, b) =>
+      a.localeCompare(b, "es")
+    );
+
+    let companyTotal = 0;
+
+    projects.forEach(project => {
+      const h4 = document.createElement("h4");
+      h4.textContent = project;
+      block.appendChild(h4);
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      thead.innerHTML = "<tr><th>Trabajador</th><th>Semana</th><th>Horas</th></tr>";
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+
+      let projectTotal = 0;
+
+      grouped[company][project].forEach(entry => {
+        const tr = document.createElement("tr");
+
+        const tdWorker = document.createElement("td");
+        tdWorker.textContent = entry.worker;
+        const tdWeek = document.createElement("td");
+        tdWeek.textContent = entry.week;
+        const tdHours = document.createElement("td");
+        tdHours.textContent = entry.hours.toString().replace(".", ",");
+
+        tr.appendChild(tdWorker);
+        tr.appendChild(tdWeek);
+        tr.appendChild(tdHours);
+        tbody.appendChild(tr);
+
+        projectTotal += entry.hours;
+      });
+
+      // Fila de total por proyecto
+      const trTotal = document.createElement("tr");
+      trTotal.className = "total-row";
+
+      const tdLabel = document.createElement("td");
+      tdLabel.colSpan = 2;
+      tdLabel.textContent = "Total proyecto";
+      const tdTotal = document.createElement("td");
+      tdTotal.textContent = projectTotal.toString().replace(".", ",");
+
+      trTotal.appendChild(tdLabel);
+      trTotal.appendChild(tdTotal);
+      tbody.appendChild(trTotal);
+
+      table.appendChild(tbody);
+      block.appendChild(table);
+
+      companyTotal += projectTotal;
+    });
+
+    // Total por empresa
+    const companyTotalEl = document.createElement("div");
+    companyTotalEl.className = "company-total";
+    companyTotalEl.textContent =
+      "Total horas en " + company + ": " + companyTotal.toString().replace(".", ",");
+    block.appendChild(companyTotalEl);
+
+    container.appendChild(block);
+
+    globalTotal += companyTotal;
+  });
+
+  // Total global
+  const globalTotalEl = document.createElement("div");
+  globalTotalEl.className = "global-total";
+  globalTotalEl.textContent =
+    "Total general de horas: " + globalTotal.toString().replace(".", ",");
+  container.appendChild(globalTotalEl);
+}
+
 // ---------- Filtros ----------
 
 function handleFilter() {
@@ -302,7 +436,6 @@ function exportToCSV() {
     return;
   }
 
-  // Cabecera
   const header = ["Trabajador", "Empresa", "Proyecto", "Semana", "Horas"];
 
   const rows = entries.map(e => [
@@ -313,7 +446,6 @@ function exportToCSV() {
     e.hours
   ]);
 
-  // CSV con ; como separador (suele ir bien en configuración española)
   const csvLines = [
     header.join(";"),
     ...rows.map(r => r.join(";"))
@@ -335,7 +467,7 @@ function exportToCSV() {
 
 function init() {
   const workers = loadWorkers();
-  const projectsByCompany = loadProjectsByCompany();
+  loadProjectsByCompany(); // por si hay que inicializar
 
   const workerSelect = document.getElementById("workerSelect");
   const companySelect = document.getElementById("companySelect");
@@ -349,11 +481,11 @@ function init() {
   // Empresas
   fillSelect(companySelect, COMPANIES, { placeholder: "Elige una empresa" });
 
-  // Proyectos iniciales: se ajustan al cambiar la empresa
+  // Proyectos: se rellenan al cambiar la empresa
   projectSelect.innerHTML = "";
   projectSelect.disabled = true;
 
-  // Filtro de trabajador: opción "Todos"
+  // Filtro de trabajador
   filterWorker.innerHTML = "";
   const allWorkersOpt = document.createElement("option");
   allWorkersOpt.value = "";
@@ -366,7 +498,7 @@ function init() {
     filterWorker.appendChild(opt);
   });
 
-  // Filtro de empresa: opción "Todas"
+  // Filtro de empresa
   filterCompany.innerHTML = "";
   const allCompaniesOpt = document.createElement("option");
   allCompaniesOpt.value = "";
@@ -379,20 +511,18 @@ function init() {
     filterCompany.appendChild(opt);
   });
 
-  // Semana por defecto: lo dejamos vacío (el usuario elige)
   const weekInput = document.getElementById("weekInput");
   const filterWeek = document.getElementById("filterWeek");
   weekInput.value = "";
   filterWeek.value = "";
 
-  // Eventos
   companySelect.addEventListener("change", updateProjectSelectForCompany);
   document.getElementById("addProjectBtn").addEventListener("click", handleAddProject);
   document.getElementById("saveBtn").addEventListener("click", handleSaveHours);
   document.getElementById("filterBtn").addEventListener("click", handleFilter);
   document.getElementById("exportBtn").addEventListener("click", exportToCSV);
+  document.getElementById("groupByCompanyBtn").addEventListener("click", renderCompanyView);
 
-  // Pintar tabla inicial
   renderTable();
 }
 
