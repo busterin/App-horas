@@ -1,316 +1,368 @@
-:root {
-  --color-bg: #f4f5fb;
-  --color-card: #ffffff;
-  --color-primary: #2563eb;
-  --color-primary-soft: #dbeafe;
-  --color-border: #e2e8f0;
-  --color-text: #0f172a;
-  --color-muted: #64748a;
-  --radius: 10px;
-  --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
-  --transition: 0.2s ease;
-  --header-height: 70px;
-}
-
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-html,
 body {
   margin: 0;
   padding: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: #f3f4f6;
+  color: #111827;
 }
 
-body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* HEADER & TABS */
-
+/* CABECERA CON LOGO */
 .app-header {
-  background: #0f172a;
-  color: #e5e7eb;
-  padding: 12px 16px 0;
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.4);
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  background: #111827;
+  color: #f9fafb;
+  padding: 16px 16px 12px;
+  text-align: center;
+}
+
+.app-logo {
+  height: 42px;
+  margin-bottom: 6px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .app-header h1 {
-  margin: 0 0 8px;
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  margin: 0;
 }
+
+/* CONTENEDOR PRINCIPAL */
+.app-main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px 8px 24px;
+}
+
+/* TABS */
 
 .tabs {
   display: flex;
-  gap: 4px;
-  padding-bottom: 8px;
-  overflow-x: auto;
+  margin-bottom: 10px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  padding: 3px;
 }
 
-.tab-button {
+.tab {
+  flex: 1;
   border: none;
   background: transparent;
-  color: #cbd5f5;
-  padding: 8px 12px;
-  border-radius: 999px 999px 0 0;
-  font-size: 0.9rem;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
   cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition), color var(--transition), transform var(--transition);
 }
 
-.tab-button:hover {
-  background: rgba(15, 23, 42, 0.7);
-}
-
-.tab-button.active {
+.tab.active {
   background: #ffffff;
-  color: #0f172a;
-  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  font-weight: 600;
 }
 
-/* LAYOUT */
-
-main {
-  flex: 1;
-  padding: 16px;
-  max-width: 1100px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-}
-
-h2 {
-  margin-top: 0;
-  margin-bottom: 16px;
-}
+/* CARDS */
 
 .card {
-  background: var(--color-card);
-  border-radius: var(--radius);
-  padding: 16px;
-  box-shadow: var(--shadow-soft);
-  margin-bottom: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 12px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
 }
 
-/* FORMS */
+.card h2 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
 
-.form-row {
+/* FORMULARIO */
+
+.field {
   display: flex;
   flex-direction: column;
-  margin-bottom: 12px;
-}
-
-.form-row label {
+  gap: 4px;
+  margin-bottom: 8px;
   font-size: 0.85rem;
-  font-weight: 500;
-  margin-bottom: 4px;
 }
 
-.form-row input,
-.form-row select,
-.form-row textarea {
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  padding: 8px 10px;
-  font-size: 0.95rem;
-  outline: none;
-  transition: border var(--transition), box-shadow var(--transition), background var(--transition);
-  background: #f9fafb;
+.field span {
+  color: #4b5563;
 }
 
-.form-row input:focus,
-.form-row select:focus,
-.form-row textarea:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-primary-soft);
-  background: #ffffff;
-}
-
-small {
-  font-size: 0.8rem;
-  color: var(--color-muted);
-}
-
-/* BUTTONS */
-
-button {
-  font-family: inherit;
-}
-
-.btn-primary,
-.btn-secondary,
-.btn-ghost {
-  border-radius: 999px;
-  border: 1px solid transparent;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition), border var(--transition), transform var(--transition), box-shadow var(--transition);
-  display: inline-flex;
-  align-items: center;
+.inline-field {
+  display: flex;
   gap: 6px;
 }
 
-.btn-primary {
-  background: var(--color-primary);
-  color: #ffffff;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+.inline-field select {
+  flex: 1;
 }
 
-.btn-primary:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+}
+
+input:focus,
+select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+/* FOTO DEL TRABAJADOR (FORMULARIO) */
+
+.worker-photo-wrapper {
+  margin-bottom: 8px;
+  display: none; /* se activa por JS cuando hay trabajador seleccionado */
+}
+
+.worker-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+}
+
+/* ETIQUETA DEL MES PARA PROYECTOS */
+
+.project-month-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* BOTONES */
+
+.btn-primary,
+.btn-secondary,
+.icon-btn {
+  border-radius: 999px;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  text-align: center;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .btn-secondary {
-  background: #ffffff;
-  color: var(--color-primary);
-  border-color: var(--color-primary-soft);
-}
-
-.btn-secondary:hover {
-  background: var(--color-primary-soft);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--color-muted);
-  border-color: transparent;
-}
-
-.btn-ghost:hover {
   background: #e5e7eb;
-  color: var(--color-text);
+  color: #111827;
 }
 
-.buttons-row {
+.icon-btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  margin-right: 4px;
+}
+
+.icon-btn.edit {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.icon-btn.delete {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.full-width {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* MENSAJES */
+
+.message {
+  min-height: 20px;
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
+.message.ok {
+  color: #059669;
+}
+
+.message.error {
+  color: #b91c1c;
+}
+
+/* FILTROS */
+
+.filters {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
-  margin-top: 8px;
+  gap: 6px;
+  align-items: flex-end;
+  margin-bottom: 8px;
 }
 
-/* TABLES */
+.filters .field.small {
+  flex: 1 1 30%;
+}
+
+/* TABLAS */
+
+.table-wrapper {
+  overflow-x: auto;
+}
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 th,
 td {
-  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 6px 4px;
   text-align: left;
-  border-bottom: 1px solid var(--color-border);
 }
 
 th {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-muted);
-  background: #f9fafb;
+  font-weight: 600;
+  color: #4b5563;
 }
 
-tr:nth-child(even) td {
-  background: #f9fafb;
-}
+/* CELDA DE TRABAJADOR CON FOTO */
 
-tr:hover td {
-  background: #eef2ff;
-}
-
-.actions-row {
+.worker-cell {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
-.export-buttons {
-  display: flex;
-  gap: 8px;
+.worker-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
 }
 
-/* FOOTER */
+/* TEXTOS PEQUEÑOS */
 
-.app-footer {
-  padding: 8px 16px 16px;
-  text-align: center;
+.hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* PARA OCULTAR VISTAS O CAMPOS */
+
+.hidden {
+  display: none;
+}
+
+/* ============================= */
+/*   ESTILOS PARA "TODOS LOS
+      PROYECTOS" y "GESTIONAR"
+   ============================= */
+
+.company-view {
+  margin-top: 8px;
   font-size: 0.8rem;
-  color: var(--color-muted);
 }
 
-/* RESPONSIVE */
-
-@media (min-width: 700px) {
-  .form-row-inline {
-    display: flex;
-    gap: 12px;
-  }
-
-  .form-row-inline .form-row {
-    flex: 1;
-  }
-}
-
-/* Estilo especial tabla proyectos (para Excel/PDF) */
-
-.tabla-estilo {
+/* Bloque de cada empresa */
+.company-block {
+  margin-top: 14px;
+  padding: 12px;
   border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+/* Empresa destacada */
+.company-block h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #111827;
+  color: #f9fafb;
+}
+
+/* Proyecto destacado */
+.company-block h4 {
+  margin: 8px 0 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #dbeafe; /* azul suave */
+  color: #1e3a8a;
+}
+
+/* TABLAS DE PROYECTOS CON CUADRÍCULA */
+
+.company-view table {
+  margin-top: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   overflow: hidden;
 }
 
-/* IMPRESIÓN (para exportar a PDF con window.print) */
+/* cabecera */
+.company-view th {
+  background: #e5e7eb;
+  color: #111827;
+  border: 1px solid #d1d5db;
+}
 
-@media print {
-  body {
-    background: #ffffff;
-  }
+/* celdas */
+.company-view td {
+  border: 1px solid #d1d5db;
+}
 
-  .app-header,
-  .app-footer,
-  nav,
-  .actions-row,
-  #registrar-horas,
-  #gestionar-proyectos {
-    display: none !important;
-  }
+/* filas alternas */
+.company-view tbody tr:nth-child(odd):not(.total-row) {
+  background: #f9fafb;
+}
 
-  #ver-proyectos {
-    display: block !important;
-  }
+/* total por proyecto (en pestaña "ver todos los proyectos") */
+.total-row td {
+  font-weight: 600;
+  border-top: 2px solid #9ca3af;
+  background: #fef3c7; /* amarillo suave */
+}
 
-  .card {
-    box-shadow: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-  }
+.company-total {
+  margin-top: 4px;
+  font-weight: 600;
+}
 
-  table {
-    font-size: 0.8rem;
-  }
+.global-total {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed #9ca3af;
+  font-weight: 700;
+}
+
+.project-actions {
+  margin: 4px 0 8px;
 }
