@@ -30,6 +30,32 @@ body {
   padding: 12px 8px 24px;
 }
 
+/* TABS */
+
+.tabs {
+  display: flex;
+  margin-bottom: 10px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  font-weight: 600;
+}
+
 .card {
   background: #ffffff;
   border-radius: 12px;
@@ -87,7 +113,8 @@ select:focus {
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.icon-btn {
   border-radius: 999px;
   border: none;
   padding: 10px 14px;
@@ -112,6 +139,22 @@ select:focus {
 
 .btn-secondary:active {
   transform: scale(0.98);
+}
+
+.icon-btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  margin-right: 4px;
+}
+
+.icon-btn.edit {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.icon-btn.delete {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .full-width {
@@ -173,12 +216,12 @@ th {
   margin-top: 6px;
 }
 
-/* Para ocultar el campo de proyecto cuando la empresa es General */
+/* Para ocultar vistas o campos */
 .hidden {
   display: none;
 }
 
-/* Vista por empresas */
+/* Vista por empresas / proyectos */
 
 .company-view {
   margin-top: 8px;
@@ -219,4 +262,8 @@ th {
   border-top: 1px dashed #9ca3af;
   font-weight: 700;
   font-size: 0.9rem;
+}
+
+.project-actions {
+  margin: 4px 0 8px;
 }
