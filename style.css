@@ -1,390 +1,282 @@
+/* ==========================
+   Reset básico
+   ========================== */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f3f4f6;
-  color: #111827;
 }
 
-/* CABECERA CON LOGO */
+/* ==========================
+   Base de la app
+   ========================== */
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #F5BF43; /* color tomado de la imagen */
+  color: #222;
+}
+
+/* ==========================
+   Cabecera
+   ========================== */
 .app-header {
-  background: #111827;
-  color: #f9fafb;
-  padding: 16px 16px 12px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+  background: transparent;
 }
 
 .app-logo {
-  height: 42px;
-  margin-bottom: 6px;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+  height: 100px;  /* logo más grande */
+  width: auto;
 }
 
 .app-header h1 {
-  font-size: 1.2rem;
+  font-size: 1.7rem;
   margin: 0;
 }
 
-/* CONTENEDOR PRINCIPAL */
+/* ==========================
+   Contenido principal
+   ========================== */
 .app-main {
-  max-width: 480px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 12px 8px 24px;
+  padding: 1rem 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-/* TABS */
-
+/* ==========================
+   Tabs
+   ========================== */
 .tabs {
   display: flex;
-  margin-bottom: 10px;
-  background: #e5e7eb;
-  border-radius: 999px;
-  padding: 3px;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .tab {
-  flex: 1;
+  background: rgba(255,255,255,0.55);
   border: none;
-  background: transparent;
-  padding: 8px 10px;
-  border-radius: 999px;
-  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
   cursor: pointer;
+  transition: 0.15s;
 }
 
 .tab.active {
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+  background: white;
   font-weight: 600;
 }
 
-/* CARDS */
+.tab:hover {
+  transform: translateY(-1px);
+}
 
+/* ==========================
+   Tarjetas
+   ========================== */
 .card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 12px 12px 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+  background: white;
+  border-radius: 14px;
+  padding: 1.25rem 1.4rem;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
 .card h2 {
-  font-size: 1rem;
-  margin: 0 0 8px;
+  margin: 0 0 0.8rem;
 }
 
-/* FORMULARIO */
+.hint {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0 0 0.8rem;
+}
 
+/* ==========================
+   Campos de formulario
+   ========================== */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
+  gap: 0.25rem;
+  margin-bottom: 0.9rem;
 }
 
 .field span {
-  color: #4b5563;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .inline-field {
   display: flex;
-  gap: 6px;
+  gap: 0.5rem;
 }
 
-.inline-field select {
-  flex: 1;
-}
-
-input,
 select,
-button {
-  font: inherit;
-}
-
-input,
-select {
-  padding: 8px 10px;
+input[type="week"],
+input[type="number"] {
+  padding: 0.45rem 0.6rem;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
 }
 
-input:focus,
-select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+select:focus,
+input:focus {
+  outline: 2px solid #f2a300;
 }
 
-/* FOTO DEL TRABAJADOR (FORMULARIO) */
-
+/* ==========================
+   Foto del monognomo
+   ========================== */
 .worker-photo-wrapper {
-  margin-bottom: 8px;
-  display: none; /* se activa por JS cuando hay trabajador seleccionado */
+  display: none;
+  margin-bottom: 0.9rem;
 }
 
 .worker-photo {
-  width: 64px;
-  height: 64px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #e5e7eb;
+  border: 3px solid #f2a300;
 }
 
-/* ETIQUETA DEL MES PARA PROYECTOS */
-
-.project-month-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 2px;
+/* ==========================
+   Filtros centrados
+   ========================== */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-/* BOTONES */
+.filters-centered {
+  justify-content: center;
+}
 
+.filters-button {
+  align-self: flex-end;
+  padding: 0.45rem 1rem;
+}
+
+/* ==========================
+   Botones
+   ========================== */
 .btn-primary,
-.btn-secondary,
-.icon-btn {
-  border-radius: 999px;
+.btn-secondary {
   border: none;
-  padding: 10px 14px;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
   cursor: pointer;
-  font-weight: 600;
-  text-align: center;
+  transition: 0.15s;
 }
 
 .btn-primary {
-  background: #2563eb;
-  color: #ffffff;
+  background: #f2a300;
+  color: #222;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: #e5e7eb;
-  color: #111827;
+  background: #fff;
+  border: 1px solid #ccc;
 }
 
-.icon-btn {
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  margin-right: 4px;
-}
-
-.icon-btn.edit {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.icon-btn.delete {
-  background: #fee2e2;
-  color: #b91c1c;
+.btn-secondary:hover {
+  background: #f7f7f7;
 }
 
 .full-width {
   width: 100%;
-  margin-top: 4px;
 }
 
-/* MENSAJES */
-
+/* ==========================
+   Mensajes
+   ========================== */
 .message {
-  min-height: 20px;
-  font-size: 0.8rem;
-  margin-top: 6px;
+  min-height: 1.2em;
+  margin-top: 0.5rem;
 }
 
 .message.ok {
-  color: #059669;
+  color: #1b8c36;
 }
 
 .message.error {
-  color: #b91c1c;
+  color: #c62828;
 }
 
-/* FILTROS */
-
-.filters {
+/* ==========================
+   Vistas de proyectos
+   ========================== */
+.company-view {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: flex-end;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
-.filters .field.small {
-  flex: 1 1 30%;
+.company-block {
+  padding-top: 0.5rem;
+  border-top: 1px solid #ddd;
 }
 
-/* TABLAS */
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-}
-
-th,
-td {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 6px 4px;
-  text-align: left;
-}
-
-th {
+.company-total,
+.global-total {
+  margin-top: 0.5rem;
   font-weight: 600;
-  color: #4b5563;
 }
-
-/* CELDA DE TRABAJADOR CON FOTO */
-
-.worker-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.worker-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid #e5e7eb;
-}
-
-/* TEXTOS PEQUEÑOS */
-
-.hint {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 6px;
-}
-
-/* PARA OCULTAR VISTAS O CAMPOS */
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
-/* ============================= */
-/*   ESTILOS PARA "TODOS LOS
-      PROYECTOS" y "GESTIONAR"
-   ============================= */
-
-.company-view {
-  margin-top: 8px;
-  font-size: 0.8rem;
+/* ==========================
+   Responsivo
+   ========================== */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .app-logo {
+    height: 80px;
+  }
+  .filters {
+    justify-content: center;
+  }
 }
 
-/* Bloque de cada empresa */
-.company-block {
-  margin-top: 14px;
-  padding: 12px;
-  border-radius: 10px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-}
-
-/* Empresa destacada */
-.company-block h3 {
-  margin: 0 0 6px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #111827;
-  color: #f9fafb;
-}
-
-/* Proyecto destacado */
-.company-block h4 {
-  margin: 8px 0 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: #dbeafe; /* azul suave */
-  color: #1e3a8a;
-}
-
-/* TABLAS DE PROYECTOS CON CUADRÍCULA */
-
-.company-view table {
-  margin-top: 4px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-/* cabecera */
-.company-view th {
-  background: #e5e7eb;
-  color: #111827;
-  border: 1px solid #d1d5db;
-}
-
-/* celdas */
-.company-view td {
-  border: 1px solid #d1d5db;
-}
-
-/* filas alternas */
-.company-view tbody tr:nth-child(odd):not(.total-row) {
-  background: #f9fafb;
-}
-
-/* total por proyecto (en pestaña "ver todos los proyectos") */
-.total-row td {
-  font-weight: 600;
-  border-top: 2px solid #9ca3af;
-  background: #fef3c7; /* amarillo suave */
-}
-
-.company-total {
-  margin-top: 4px;
-  font-weight: 600;
-}
-
-.global-total {
-  margin-top: 10px;
-  padding-top: 6px;
-  border-top: 1px dashed #9ca3af;
-  font-weight: 700;
-}
-
-.project-actions {
-  margin: 4px 0 8px;
-}
-
-/* Fondo general de la app */
-body {
-  background-color: #F5BF43;
-}
-
-/* Cabecera transparente */
-.app-header {
-  background: transparent;
-  box-shadow: none;        /* por si tenía sombra */
-  border-bottom: none;     /* por si tenía línea inferior */
-}
-
-/* Contenedor principal sin fondo extra (opcional) */
-.app-main {
-  background: transparent;
-}
-
-/* Aseguramos que las tarjetas siguen siendo blancas */
-.card {
-  background: #ffffff;
+/* ==========================
+   Estilos para impresión (PDF)
+   ========================== */
+@media print {
+  body {
+    background: white;
+  }
+  .app-header,
+  .tabs,
+  #mainView {
+    display: none !important;
+  }
+  #projectsView {
+    display: block !important;
+  }
+  .card {
+    box-shadow: none;
+    padding: 0;
+  }
 }
