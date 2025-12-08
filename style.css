@@ -135,13 +135,14 @@ select:focus {
 
 .filters {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: flex-end;
   margin-bottom: 8px;
 }
 
 .filters .field.small {
-  flex: 1;
+  flex: 1 1 30%;
 }
 
 .table-wrapper {
@@ -170,4 +171,9 @@ th {
   font-size: 0.75rem;
   color: #6b7280;
   margin-top: 6px;
+}
+
+/* Para ocultar el campo de proyecto cuando la empresa es General */
+.hidden {
+  display: none;
 }
