@@ -15,7 +15,7 @@ body {
 
 /* === CABECERA TRANSPARENTE === */
 .app-header {
-  background: transparent; /* antes #111827 */
+  background: transparent;
   color: #111827;
   padding: 16px 16px 12px;
   text-align: center;
@@ -23,7 +23,7 @@ body {
 
 /* LOGO MÁS GRANDE */
 .app-logo {
-  height: 70px;   /* antes 42px */
+  height: 70px;
   margin-bottom: 6px;
   display: block;
   margin-left: auto;
@@ -123,7 +123,7 @@ select:focus {
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
 }
 
-/* FOTO DEL TRABAJADOR */
+/* FOTO DEL TRABAJADOR (FORMULARIO) */
 .worker-photo-wrapper {
   margin-bottom: 8px;
   display: none;
@@ -220,6 +220,53 @@ select:focus {
   font-size: 0.75rem;
   color: #6b7280;
   margin-top: 6px;
+}
+
+/* TABLAS GENERALES */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 6px 4px;
+  text-align: left;
+}
+
+th {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* CELDA DE TRABAJADOR CON FOTO */
+.worker-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tamaño general de avatar */
+.worker-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+}
+
+/* Y aseguramos que en "Ver todos los proyectos" nunca se hagan gigantes */
+.company-view .worker-avatar {
+  width: 24px !important;
+  height: 24px !important;
+  max-width: 24px !important;
+  max-height: 24px !important;
 }
 
 /* HIDDEN */
