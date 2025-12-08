@@ -29,7 +29,7 @@ const DEFAULT_WORKERS = [
   "Voby 🚀"
 ];
 
-// Proyectos iniciales por empresa (de momento de ejemplo)
+// Proyectos iniciales por empresa (ejemplo)
 const DEFAULT_PROJECTS_BY_COMPANY = {
   Monognomo: ["Mono Proyecto 1", "Mono Proyecto 2"],
   Neozink: ["Neo Proyecto 1", "Neo Proyecto 2"],
@@ -40,7 +40,6 @@ const DEFAULT_PROJECTS_BY_COMPANY = {
 // ---------- Utilidades de almacenamiento ----------
 
 function deepClone(value) {
-  // Por si algún navegador no soporta structuredClone
   try {
     return structuredClone(value);
   } catch {
@@ -129,7 +128,6 @@ function updateProjectSelectForCompany() {
   const projectsByCompany = loadProjectsByCompany();
 
   if (!company) {
-    // Sin empresa seleccionada: ocultamos proyectos
     projectWrapper.classList.add("hidden");
     projectSelect.disabled = true;
     projectSelect.innerHTML = "";
@@ -137,14 +135,12 @@ function updateProjectSelectForCompany() {
   }
 
   if (company === "General") {
-    // General: no se seleccionan proyectos
     projectWrapper.classList.add("hidden");
     projectSelect.disabled = true;
     projectSelect.innerHTML = "";
     return;
   }
 
-  // Empresa normal
   projectWrapper.classList.remove("hidden");
   projectSelect.disabled = false;
 
@@ -189,6 +185,72 @@ function handleAddProject() {
   const projectSelect = document.getElementById("projectSelect");
   fillSelect(projectSelect, list, { placeholder: "Elige un proyecto" });
   projectSelect.value = trimmed;
+}
+
+// ---------- Edición y borrado de registros ----------
+
+function updateEntryHours(id, newHours) {
+  const entries = loadEntries();
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  entry.hours = newHours;
+  saveEntries(entries);
+  renderTable();
+  // Si está abierta la pestaña de proyectos, actualizamos también
+  if (!document.getElementById("projectsView").classList.contains("hidden")) {
+    renderCompanyView();
+  }
+}
+
+function deleteEntry(id) {
+  let entries = loadEntries();
+  entries = entries.filter(e => e.id !== id);
+  saveEntries(entries);
+  renderTable();
+  if (!document.getElementById("projectsView").classList.contains("hidden")) {
+    renderCompanyView();
+  }
+}
+
+function handleEditClick(id) {
+  const entries = loadEntries();
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  const current = entry.hours.toString().replace(".", ",");
+  const result = prompt("Introduce las nuevas horas:", current);
+  if (result === null) return;
+  const normalized = result.replace(",", ".");
+  const value = parseFloat(normalized);
+  if (isNaN(value) || value < 0) {
+    alert("Valor de horas no válido.");
+    return;
+  }
+  updateEntryHours(id, value);
+}
+
+function handleDeleteClick(id) {
+  if (!confirm("¿Seguro que quieres borrar este registro de horas?")) return;
+  deleteEntry(id);
+}
+
+// Borrar proyecto completo (todas las entradas y el proyecto de la lista)
+function deleteProject(company, project) {
+  if (!confirm(`¿Seguro que quieres borrar el proyecto "${project}" de "${company}" y todas sus horas asociadas?`)) {
+    return;
+  }
+
+  let entries = loadEntries();
+  entries = entries.filter(e => !(e.company === company && e.project === project));
+  saveEntries(entries);
+
+  const projectsByCompany = loadProjectsByCompany();
+  if (projectsByCompany[company]) {
+    projectsByCompany[company] = projectsByCompany[company].filter(p => p !== project);
+    saveProjectsByCompany(projectsByCompany);
+  }
+
+  renderTable();
+  renderCompanyView();
 }
 
 // ---------- Guardar horas ----------
@@ -263,7 +325,7 @@ function renderTable(filter = {}) {
   if (filtered.length === 0) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 5;
+    td.colSpan = 6;
     td.textContent = "No hay registros.";
     tr.appendChild(td);
     tbody.appendChild(tr);
@@ -272,6 +334,7 @@ function renderTable(filter = {}) {
 
   filtered.forEach(entry => {
     const tr = document.createElement("tr");
+    tr.dataset.id = entry.id;
 
     const tdWorker = document.createElement("td");
     tdWorker.textContent = entry.worker;
@@ -293,11 +356,28 @@ function renderTable(filter = {}) {
     tdHours.textContent = entry.hours.toString().replace(".", ",");
     tr.appendChild(tdHours);
 
+    const tdActions = document.createElement("td");
+    const editBtn = document.createElement("button");
+    editBtn.className = "icon-btn edit";
+    editBtn.textContent = "✏️";
+    editBtn.title = "Editar horas";
+    editBtn.addEventListener("click", () => handleEditClick(entry.id));
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "icon-btn delete";
+    deleteBtn.textContent = "🗑️";
+    deleteBtn.title = "Borrar registro";
+    deleteBtn.addEventListener("click", () => handleDeleteClick(entry.id));
+
+    tdActions.appendChild(editBtn);
+    tdActions.appendChild(deleteBtn);
+    tr.appendChild(tdActions);
+
     tbody.appendChild(tr);
   });
 }
 
-// ---------- Vista agrupada por empresas (con totales) ----------
+// ---------- Vista agrupada por empresas/proyectos (pestaña "Ver todos los proyectos") ----------
 
 function renderCompanyView() {
   const container = document.getElementById("companyView");
@@ -312,7 +392,6 @@ function renderCompanyView() {
     return;
   }
 
-  // Agrupar por empresa y proyecto
   const grouped = {};
   entries.forEach(e => {
     if (!grouped[e.company]) grouped[e.company] = {};
@@ -347,7 +426,7 @@ function renderCompanyView() {
 
       const table = document.createElement("table");
       const thead = document.createElement("thead");
-      thead.innerHTML = "<tr><th>Trabajador</th><th>Semana</th><th>Horas</th></tr>";
+      thead.innerHTML = "<tr><th>Trabajador</th><th>Semana</th><th>Horas</th><th>Acciones</th></tr>";
       table.appendChild(thead);
 
       const tbody = document.createElement("tbody");
@@ -356,6 +435,7 @@ function renderCompanyView() {
 
       grouped[company][project].forEach(entry => {
         const tr = document.createElement("tr");
+        tr.dataset.id = entry.id;
 
         const tdWorker = document.createElement("td");
         tdWorker.textContent = entry.worker;
@@ -364,9 +444,27 @@ function renderCompanyView() {
         const tdHours = document.createElement("td");
         tdHours.textContent = entry.hours.toString().replace(".", ",");
 
+        const tdActions = document.createElement("td");
+        const editBtn = document.createElement("button");
+        editBtn.className = "icon-btn edit";
+        editBtn.textContent = "✏️";
+        editBtn.title = "Editar horas";
+        editBtn.addEventListener("click", () => handleEditClick(entry.id));
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "icon-btn delete";
+        deleteBtn.textContent = "🗑️";
+        deleteBtn.title = "Borrar registro";
+        deleteBtn.addEventListener("click", () => handleDeleteClick(entry.id));
+
+        tdActions.appendChild(editBtn);
+        tdActions.appendChild(deleteBtn);
+
         tr.appendChild(tdWorker);
         tr.appendChild(tdWeek);
         tr.appendChild(tdHours);
+        tr.appendChild(tdActions);
+
         tbody.appendChild(tr);
 
         projectTotal += entry.hours;
@@ -377,7 +475,7 @@ function renderCompanyView() {
       trTotal.className = "total-row";
 
       const tdLabel = document.createElement("td");
-      tdLabel.colSpan = 2;
+      tdLabel.colSpan = 3;
       tdLabel.textContent = "Total proyecto";
       const tdTotal = document.createElement("td");
       tdTotal.textContent = projectTotal.toString().replace(".", ",");
@@ -389,10 +487,19 @@ function renderCompanyView() {
       table.appendChild(tbody);
       block.appendChild(table);
 
+      // Botón para borrar todo el proyecto
+      const projectActions = document.createElement("div");
+      projectActions.className = "project-actions";
+      const deleteProjectBtn = document.createElement("button");
+      deleteProjectBtn.className = "icon-btn delete";
+      deleteProjectBtn.textContent = "🗑️ Borrar proyecto completo";
+      deleteProjectBtn.addEventListener("click", () => deleteProject(company, project));
+      projectActions.appendChild(deleteProjectBtn);
+      block.appendChild(projectActions);
+
       companyTotal += projectTotal;
     });
 
-    // Total por empresa
     const companyTotalEl = document.createElement("div");
     companyTotalEl.className = "company-total";
     companyTotalEl.textContent =
@@ -404,7 +511,6 @@ function renderCompanyView() {
     globalTotal += companyTotal;
   });
 
-  // Total global
   const globalTotalEl = document.createElement("div");
   globalTotalEl.className = "global-total";
   globalTotalEl.textContent =
@@ -463,11 +569,28 @@ function exportToCSV() {
   URL.revokeObjectURL(url);
 }
 
+// ---------- Tabs ----------
+
+function switchToMainView() {
+  document.getElementById("mainView").classList.remove("hidden");
+  document.getElementById("projectsView").classList.add("hidden");
+  document.getElementById("tabMain").classList.add("active");
+  document.getElementById("tabProjects").classList.remove("active");
+}
+
+function switchToProjectsView() {
+  document.getElementById("mainView").classList.add("hidden");
+  document.getElementById("projectsView").classList.remove("hidden");
+  document.getElementById("tabMain").classList.remove("active");
+  document.getElementById("tabProjects").classList.add("active");
+  renderCompanyView();
+}
+
 // ---------- Inicialización general ----------
 
 function init() {
   const workers = loadWorkers();
-  loadProjectsByCompany(); // por si hay que inicializar
+  loadProjectsByCompany();
 
   const workerSelect = document.getElementById("workerSelect");
   const companySelect = document.getElementById("companySelect");
@@ -516,12 +639,15 @@ function init() {
   weekInput.value = "";
   filterWeek.value = "";
 
+  // Eventos
   companySelect.addEventListener("change", updateProjectSelectForCompany);
   document.getElementById("addProjectBtn").addEventListener("click", handleAddProject);
   document.getElementById("saveBtn").addEventListener("click", handleSaveHours);
   document.getElementById("filterBtn").addEventListener("click", handleFilter);
   document.getElementById("exportBtn").addEventListener("click", exportToCSV);
-  document.getElementById("groupByCompanyBtn").addEventListener("click", renderCompanyView);
+
+  document.getElementById("tabMain").addEventListener("click", switchToMainView);
+  document.getElementById("tabProjects").addEventListener("click", switchToProjectsView);
 
   renderTable();
 }
