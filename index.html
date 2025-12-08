@@ -23,6 +23,9 @@
       <button type="button" id="tabProjects" class="tab">
         Ver todos los proyectos
       </button>
+      <button type="button" id="tabManageProjects" class="tab">
+        Gestionar proyectos
+      </button>
     </nav>
 
     <!-- VISTA PRINCIPAL -->
@@ -47,12 +50,15 @@
           <select id="companySelect"></select>
         </label>
 
-        <!-- Proyecto -->
+        <!-- Proyecto + mes -->
         <label class="field" id="projectFieldWrapper">
           <span>Proyecto</span>
           <div class="inline-field">
             <select id="projectSelect"></select>
             <button type="button" id="addProjectBtn" class="btn-secondary">+</button>
+          </div>
+          <div id="projectMonthLabel" class="project-month-label">
+            Selecciona empresa y semana para ver los proyectos del mes.
           </div>
         </label>
 
@@ -125,12 +131,23 @@
       </section>
     </div>
 
-    <!-- PESTAÑA DE PROYECTOS -->
+    <!-- PESTAÑA: VER TODOS LOS PROYECTOS -->
     <div id="projectsView" class="hidden">
       <section class="card">
         <h2>Todos los proyectos</h2>
         <p class="hint">Vista agrupada por empresa y proyecto, con totales y edición/borrado.</p>
         <div id="companyView" class="company-view"></div>
+      </section>
+    </div>
+
+    <!-- PESTAÑA: GESTIONAR PROYECTOS POR MESES -->
+    <div id="manageProjectsView" class="hidden">
+      <section class="card">
+        <h2>Gestionar proyectos por meses</h2>
+        <p class="hint">
+          Aquí puedes ver en qué meses está cada proyecto y modificar sus meses asociados.
+        </p>
+        <div id="manageProjectsContainer" class="company-view"></div>
       </section>
     </div>
 
