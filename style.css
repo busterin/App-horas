@@ -12,22 +12,25 @@ body {
   color: #111827;
 }
 
+/* CABECERA CON LOGO */
 .app-header {
   background: #111827;
   color: #f9fafb;
-  padding: 12px 16px;
+  padding: 16px 16px 12px;
   text-align: center;
+}
+
+.app-logo {
+  height: 42px;
+  margin-bottom: 6px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .app-header h1 {
   font-size: 1.2rem;
   margin: 0;
-}
-
-.app-main {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 12px 8px 24px;
 }
 
 /* TABS */
@@ -56,6 +59,8 @@ body {
   font-weight: 600;
 }
 
+/* CARDS */
+
 .card {
   background: #ffffff;
   border-radius: 12px;
@@ -68,6 +73,8 @@ body {
   font-size: 1rem;
   margin: 0 0 8px;
 }
+
+/* FORMULARIO */
 
 .field {
   display: flex;
@@ -102,15 +109,15 @@ select {
   border-radius: 8px;
   border: 1px solid #d1d5db;
   background: #f9fafb;
-  outline: none;
 }
 
 input:focus,
 select:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
-  background: #ffffff;
 }
+
+/* BOTONES */
 
 .btn-primary,
 .btn-secondary,
@@ -128,17 +135,9 @@ select:focus {
   color: #ffffff;
 }
 
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
 .btn-secondary {
   background: #e5e7eb;
   color: #111827;
-}
-
-.btn-secondary:active {
-  transform: scale(0.98);
 }
 
 .icon-btn {
@@ -157,36 +156,11 @@ select:focus {
   color: #b91c1c;
 }
 
-.full-width {
-  width: 100%;
-  margin-top: 4px;
+.hidden {
+  display: none;
 }
 
-.message {
-  min-height: 20px;
-  font-size: 0.8rem;
-  margin-top: 6px;
-}
-
-.message.ok {
-  color: #059669;
-}
-
-.message.error {
-  color: #b91c1c;
-}
-
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: flex-end;
-  margin-bottom: 8px;
-}
-
-.filters .field.small {
-  flex: 1 1 30%;
-}
+/* TABLA PRINCIPAL (RESUMEN RÁPIDO) */
 
 .table-wrapper {
   overflow-x: auto;
@@ -198,7 +172,6 @@ table {
   font-size: 0.8rem;
 }
 
-/* tabla principal (resumen rápido) */
 th,
 td {
   border-bottom: 1px solid #e5e7eb;
@@ -211,18 +184,10 @@ th {
   color: #4b5563;
 }
 
-.hint {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 6px;
-}
-
-/* Para ocultar vistas o campos */
-.hidden {
-  display: none;
-}
-
-/* ===== VISTA "VER TODOS LOS PROYECTOS" ===== */
+/* ============================= */
+/*   ESTILOS PARA TODOS LOS
+      PROYECTOS (Pestaña 2)
+   ============================= */
 
 .company-view {
   margin-top: 8px;
@@ -231,17 +196,17 @@ th {
 
 /* Bloque de cada empresa */
 .company-block {
-  margin-top: 10px;
-  padding: 10px 10px 12px;
+  margin-top: 14px;
+  padding: 12px;
   border-radius: 10px;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
 }
 
-/* Nombre de empresa bien destacado */
+/* Empresa destacada */
 .company-block h3 {
   margin: 0 0 6px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
   display: inline-block;
   padding: 4px 10px;
@@ -250,7 +215,7 @@ th {
   color: #f9fafb;
 }
 
-/* Nombre de proyecto destacado en color */
+/* Proyecto destacado */
 .company-block h4 {
   margin: 8px 0 4px;
   font-size: 0.85rem;
@@ -258,11 +223,11 @@ th {
   display: inline-block;
   padding: 3px 8px;
   border-radius: 999px;
-  background: #dbeafe;   /* azul suave */
+  background: #dbeafe; /* azul suave */
   color: #1e3a8a;
 }
 
-/* TABLAS DE PROYECTOS: cuadrícula y colores */
+/* TABLAS DE PROYECTOS CON CUADRÍCULA */
 
 .company-view table {
   margin-top: 4px;
@@ -271,51 +236,42 @@ th {
   overflow: hidden;
 }
 
-/* cabecera destacada */
+/* cabecera */
 .company-view th {
   background: #e5e7eb;
   color: #111827;
   border: 1px solid #d1d5db;
-  padding: 6px 4px;
 }
 
-/* celdas con cuadrícula completa */
+/* celdas */
 .company-view td {
   border: 1px solid #d1d5db;
-  padding: 6px 4px;
 }
 
-/* filas alternas para mejor lectura */
+/* filas alternas */
 .company-view tbody tr:nth-child(odd):not(.total-row) {
   background: #f9fafb;
 }
 
-/* fila de total de proyecto */
+/* total por proyecto */
 .total-row td {
   font-weight: 600;
   border-top: 2px solid #9ca3af;
-  background: #fef3c7;   /* amarillo suave */
+  background: #fef3c7; /* amarillo suave */
 }
 
-/* total por empresa */
 .company-total {
   margin-top: 4px;
   font-weight: 600;
-  font-size: 0.85rem;
-  color: #111827;
 }
 
-/* total global */
 .global-total {
   margin-top: 10px;
   padding-top: 6px;
   border-top: 1px dashed #9ca3af;
   font-weight: 700;
-  font-size: 0.9rem;
-  color: #111827;
 }
 
-/* acciones de proyecto (borrar proyecto completo) */
 .project-actions {
   margin: 4px 0 8px;
 }
