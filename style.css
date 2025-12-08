@@ -327,14 +327,12 @@ th {
   overflow: hidden;
 }
 
-/* cabecera */
 .company-view th {
   background: #e5e7eb;
   color: #111827;
   border: 1px solid #d1d5db;
 }
 
-/* celdas */
 .company-view td {
   border: 1px solid #d1d5db;
 }
@@ -344,7 +342,7 @@ th {
   background: #f9fafb;
 }
 
-/* total por proyecto (en pestaña "ver todos los proyectos") */
+/* total por proyecto */
 .total-row td {
   font-weight: 600;
   border-top: 2px solid #9ca3af;
@@ -365,4 +363,40 @@ th {
 
 .project-actions {
   margin: 4px 0 8px;
+}
+
+/* ============================= */
+/*   VERSIÓN PARA IMPRIMIR PDF   */
+/* ============================= */
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .app-header,
+  .tabs,
+  #mainView,
+  #manageProjectsView,
+  #exportPdfBtn {
+    display: none !important;
+  }
+
+  #projectsView {
+    display: block !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .app-main {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
 }
