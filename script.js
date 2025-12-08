@@ -738,6 +738,10 @@ function handleSaveHours() {
 
 function renderTable(filter = {}) {
   const tbody = document.getElementById("entriesTableBody");
+  // Si no existe la tabla (por ejemplo, si se ha quitado en Resumen rápido),
+  // salimos sin hacer nada para evitar errores.
+  if (!tbody) return;
+
   const entries = loadEntries();
 
   const filtered = entries.filter(e => {
@@ -1059,7 +1063,7 @@ function handleFilter() {
 }
 
 // =====================================
-//   Exportar CSV (agrupado como "Ver todos los proyectos")
+//   Exportar CSV (formato tabla)
 // =====================================
 
 function exportToCSV() {
@@ -1069,58 +1073,55 @@ function exportToCSV() {
     return;
   }
 
-  // Agrupamos igual que en "Ver todos los proyectos"
-  const grouped = {};
-  entries.forEach(e => {
-    if (!grouped[e.company]) grouped[e.company] = {};
-    if (!grouped[e.company][e.project]) grouped[e.company][e.project] = [];
-    grouped[e.company][e.project].push(e);
-  });
+  // Ordenamos por empresa, proyecto, trabajador, semana
+  const sorted = [...entries].sort((a, b) => {
+    const byCompany = a.company.localeCompare(b.company, "es");
+    if (byCompany !== 0) return byCompany;
 
-  const companies = Object.keys(grouped).sort((a, b) =>
-    a.localeCompare(b, "es")
-  );
+    const byProject = a.project.localeCompare(b.project, "es");
+    if (byProject !== 0) return byProject;
+
+    const byWorker = a.worker.localeCompare(b.worker, "es");
+    if (byWorker !== 0) return byWorker;
+
+    return a.week.localeCompare(b.week, "es");
+  });
 
   const lines = [];
-  let globalTotal = 0;
 
-  companies.forEach(company => {
-    lines.push(`Empresa: ${company}`);
-    let companyTotal = 0;
+  // Cabecera principal (tabla tipo "base de datos")
+  lines.push("Empresa;Proyecto;Monognomo;Semana;Horas");
 
-    const projects = Object.keys(grouped[company]).sort((a, b) =>
-      a.localeCompare(b, "es")
+  sorted.forEach(e => {
+    const hours = e.hours ?? 0;
+    const hoursStr = String(hours).replace(".", ","); // coma decimal
+
+    lines.push(
+      `${e.company};${e.project};${e.worker};${e.week};${hoursStr}`
     );
-
-    projects.forEach(project => {
-      lines.push(`Proyecto: ${project}`);
-      lines.push("Trabajador;Semana;Horas");
-
-      let projectTotal = 0;
-
-      grouped[company][project].forEach(e => {
-        const hours = e.hours ?? 0;
-        projectTotal += Number(hours) || 0;
-        const hoursStr = String(hours).replace(".", ",");
-        lines.push(`${e.worker};${e.week};${hoursStr}`);
-      });
-
-      const projectTotalStr = String(projectTotal).replace(".", ",");
-      lines.push(`Total proyecto;;${projectTotalStr}`);
-      lines.push(""); // línea en blanco entre proyectos
-
-      companyTotal += projectTotal;
-    });
-
-    const companyTotalStr = String(companyTotal).replace(".", ",");
-    lines.push(`Total empresa;;${companyTotalStr}`);
-    lines.push(""); // línea en blanco entre empresas
-
-    globalTotal += companyTotal;
   });
 
-  const globalTotalStr = String(globalTotal).replace(".", ",");
-  lines.push(`Total general;;${globalTotalStr}`);
+  // ---- Bloque de totales por empresa y proyecto ----
+  const groupedTotals = {};
+  sorted.forEach(e => {
+    const key = `${e.company}|||${e.project}`;
+    const hours = Number(e.hours ?? 0) || 0;
+    groupedTotals[key] = (groupedTotals[key] || 0) + hours;
+  });
+
+  lines.push("");
+  lines.push("Totales por empresa y proyecto");
+  lines.push("Empresa;Proyecto;;Total horas");
+
+  Object.keys(groupedTotals)
+    .sort((a, b) => a.localeCompare(b, "es"))
+    .forEach(key => {
+      const [company, project] = key.split("|||");
+      const total = groupedTotals[key];
+      const totalStr = String(total).replace(".", ",");
+
+      lines.push(`${company};${project};;${totalStr}`);
+    });
 
   const csvContent = lines.join("\n");
 
@@ -1128,7 +1129,7 @@ function exportToCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "horas_empresa_agrupadas.csv";
+  a.download = "horas_monognomos.csv";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
