@@ -133,9 +133,9 @@ const WORKER_IMAGE_EXTENSIONS = [".jpeg", ".jpg", ".png"];
 // (sin extensión)
 const WORKER_IMAGE_BASE_MAP = {
   "Elías": "Elias",
-  "Inés": "Inés",
-  "María C": "María C",
-  "María M": "María M"
+  "Inés": "Ines",
+  "María C": "Mariac",
+  "María M": "Mariam"
   // el resto usará el nombre tal cual
 };
 
