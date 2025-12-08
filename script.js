@@ -8,25 +8,25 @@ const STORAGE_KEYS = {
 // Empresas disponibles
 const COMPANIES = ["Monognomo", "Neozink", "Yurmuvi", "General"];
 
-// Trabajadores iniciales con iconos
+// Trabajadores (SIN iconos, solo nombre)
 const DEFAULT_WORKERS = [
-  "Alba 🐣",
-  "Buster 🤖",
-  "Castri 🦊",
-  "Celia 🌻",
-  "Elías 🎧",
-  "Genio 🧠",
-  "Inés 🐱",
-  "Keila 🐬",
-  "Laura 🍀",
-  "Lorena 🌙",
-  "Maider 🔆",
-  "María C 🌸",
-  "María M ⭐",
-  "Rober 🐺",
-  "Sandra 🔮",
-  "Sara 🐼",
-  "Voby 🚀"
+  "Alba",
+  "Buster",
+  "Castri",
+  "Celia",
+  "Elías",
+  "Genio",
+  "Inés",
+  "Keila",
+  "Laura",
+  "Lorena",
+  "Maider",
+  "María C",
+  "María M",
+  "Rober",
+  "Sandra",
+  "Sara",
+  "Voby"
 ];
 
 // Proyectos iniciales por empresa (ejemplo)
@@ -37,7 +37,7 @@ const DEFAULT_PROJECTS_BY_COMPANY = {
   General: [] // General no usa lista de proyectos, se guarda como "General"
 };
 
-// ---------- Utilidades de almacenamiento ----------
+// ===== Utilidades de almacenamiento =====
 
 function deepClone(value) {
   try {
@@ -89,7 +89,7 @@ function saveEntries(entries) {
   saveToStorage(STORAGE_KEYS.ENTRIES, entries);
 }
 
-// ---------- Utilidades de UI ----------
+// ===== Utilidades de UI =====
 
 function fillSelect(selectEl, items, { placeholder } = {}) {
   selectEl.innerHTML = "";
@@ -118,7 +118,55 @@ function showMessage(text, type = "ok") {
   }
 }
 
-// --- Cambio de empresa: actualizar proyectos ---
+// ===== Fotos de trabajadores =====
+
+// cambia aquí la extensión si tus fotos no son .png
+const WORKER_IMAGE_EXTENSION = ".png";
+
+function getWorkerImageSrc(workerName) {
+  // asume 'images/NOMBRE.png'
+  return "images/" + workerName + WORKER_IMAGE_EXTENSION;
+}
+
+function updateWorkerPhoto() {
+  const select = document.getElementById("workerSelect");
+  const wrapper = document.querySelector(".worker-photo-wrapper");
+  const img = document.getElementById("workerPhoto");
+
+  if (!select || !wrapper || !img) return;
+
+  const worker = select.value;
+  if (!worker) {
+    wrapper.style.display = "none";
+    img.src = "";
+    img.alt = "Foto del trabajador seleccionado";
+    return;
+  }
+
+  img.src = getWorkerImageSrc(worker);
+  img.alt = "Foto de " + worker;
+  wrapper.style.display = "block";
+}
+
+// crea una celda <td> con foto + nombre
+function createWorkerCell(workerName) {
+  const td = document.createElement("td");
+  td.className = "worker-cell";
+
+  const img = document.createElement("img");
+  img.className = "worker-avatar";
+  img.src = getWorkerImageSrc(workerName);
+  img.alt = workerName;
+
+  const span = document.createElement("span");
+  span.textContent = workerName;
+
+  td.appendChild(img);
+  td.appendChild(span);
+  return td;
+}
+
+// ===== Cambio de empresa: actualizar proyectos =====
 
 function updateProjectSelectForCompany() {
   const companySelect = document.getElementById("companySelect");
@@ -148,7 +196,7 @@ function updateProjectSelectForCompany() {
   fillSelect(projectSelect, projects, { placeholder: "Elige un proyecto" });
 }
 
-// ---------- Gestión de proyectos ----------
+// ===== Gestión de proyectos =====
 
 function handleAddProject() {
   const companySelect = document.getElementById("companySelect");
@@ -187,7 +235,7 @@ function handleAddProject() {
   projectSelect.value = trimmed;
 }
 
-// ---------- Edición y borrado de registros ----------
+// ===== Edición / borrado de registros =====
 
 function updateEntryHours(id, newHours) {
   const entries = loadEntries();
@@ -196,7 +244,6 @@ function updateEntryHours(id, newHours) {
   entry.hours = newHours;
   saveEntries(entries);
   renderTable();
-  // Si está abierta la pestaña de proyectos, actualizamos también
   if (!document.getElementById("projectsView").classList.contains("hidden")) {
     renderCompanyView();
   }
@@ -233,7 +280,7 @@ function handleDeleteClick(id) {
   deleteEntry(id);
 }
 
-// Borrar proyecto completo (todas las entradas y el proyecto de la lista)
+// borrar proyecto completo + sus entradas
 function deleteProject(company, project) {
   if (!confirm(`¿Seguro que quieres borrar el proyecto "${project}" de "${company}" y todas sus horas asociadas?`)) {
     return;
@@ -253,7 +300,7 @@ function deleteProject(company, project) {
   renderCompanyView();
 }
 
-// ---------- Guardar horas ----------
+// ===== Guardar horas =====
 
 function handleSaveHours() {
   const workerSelect = document.getElementById("workerSelect");
@@ -307,7 +354,7 @@ function handleSaveHours() {
   renderTable();
 }
 
-// ---------- Tabla de resumen plano ----------
+// ===== Tabla de resumen rápido =====
 
 function renderTable(filter = {}) {
   const tbody = document.getElementById("entriesTableBody");
@@ -336,8 +383,8 @@ function renderTable(filter = {}) {
     const tr = document.createElement("tr");
     tr.dataset.id = entry.id;
 
-    const tdWorker = document.createElement("td");
-    tdWorker.textContent = entry.worker;
+    // Trabajador con foto
+    const tdWorker = createWorkerCell(entry.worker);
     tr.appendChild(tdWorker);
 
     const tdCompany = document.createElement("td");
@@ -377,7 +424,7 @@ function renderTable(filter = {}) {
   });
 }
 
-// ---------- Vista agrupada por empresas/proyectos (pestaña "Ver todos los proyectos") ----------
+// ===== Vista "Todos los proyectos" (agrupada) =====
 
 function renderCompanyView() {
   const container = document.getElementById("companyView");
@@ -437,12 +484,17 @@ function renderCompanyView() {
         const tr = document.createElement("tr");
         tr.dataset.id = entry.id;
 
-        const tdWorker = document.createElement("td");
-        tdWorker.textContent = entry.worker;
+        // Trabajador con foto
+        const tdWorker = createWorkerCell(entry.worker);
+        tr.appendChild(tdWorker);
+
         const tdWeek = document.createElement("td");
         tdWeek.textContent = entry.week;
+        tr.appendChild(tdWeek);
+
         const tdHours = document.createElement("td");
         tdHours.textContent = entry.hours.toString().replace(".", ",");
+        tr.appendChild(tdHours);
 
         const tdActions = document.createElement("td");
         const editBtn = document.createElement("button");
@@ -459,10 +511,6 @@ function renderCompanyView() {
 
         tdActions.appendChild(editBtn);
         tdActions.appendChild(deleteBtn);
-
-        tr.appendChild(tdWorker);
-        tr.appendChild(tdWeek);
-        tr.appendChild(tdHours);
         tr.appendChild(tdActions);
 
         tbody.appendChild(tr);
@@ -470,7 +518,7 @@ function renderCompanyView() {
         projectTotal += entry.hours;
       });
 
-      // Fila de total por proyecto
+      // Fila total proyecto
       const trTotal = document.createElement("tr");
       trTotal.className = "total-row";
 
@@ -487,7 +535,7 @@ function renderCompanyView() {
       table.appendChild(tbody);
       block.appendChild(table);
 
-      // Botón para borrar todo el proyecto
+      // Botón borrar proyecto completo
       const projectActions = document.createElement("div");
       projectActions.className = "project-actions";
       const deleteProjectBtn = document.createElement("button");
@@ -518,7 +566,7 @@ function renderCompanyView() {
   container.appendChild(globalTotalEl);
 }
 
-// ---------- Filtros ----------
+// ===== Filtros =====
 
 function handleFilter() {
   const worker = document.getElementById("filterWorker").value;
@@ -533,7 +581,7 @@ function handleFilter() {
   renderTable(filter);
 }
 
-// ---------- Exportar a CSV (Excel) ----------
+// ===== Exportar CSV =====
 
 function exportToCSV() {
   const entries = loadEntries();
@@ -569,7 +617,7 @@ function exportToCSV() {
   URL.revokeObjectURL(url);
 }
 
-// ---------- Tabs ----------
+// ===== Tabs =====
 
 function switchToMainView() {
   document.getElementById("mainView").classList.remove("hidden");
@@ -586,7 +634,7 @@ function switchToProjectsView() {
   renderCompanyView();
 }
 
-// ---------- Inicialización general ----------
+// ===== Init =====
 
 function init() {
   const workers = loadWorkers();
@@ -604,11 +652,11 @@ function init() {
   // Empresas
   fillSelect(companySelect, COMPANIES, { placeholder: "Elige una empresa" });
 
-  // Proyectos: se rellenan al cambiar la empresa
+  // Proyectos (se rellenan al cambiar empresa)
   projectSelect.innerHTML = "";
   projectSelect.disabled = true;
 
-  // Filtro de trabajador
+  // Filtro trabajadores
   filterWorker.innerHTML = "";
   const allWorkersOpt = document.createElement("option");
   allWorkersOpt.value = "";
@@ -621,7 +669,7 @@ function init() {
     filterWorker.appendChild(opt);
   });
 
-  // Filtro de empresa
+  // Filtro empresas
   filterCompany.innerHTML = "";
   const allCompaniesOpt = document.createElement("option");
   allCompaniesOpt.value = "";
@@ -648,6 +696,10 @@ function init() {
 
   document.getElementById("tabMain").addEventListener("click", switchToMainView);
   document.getElementById("tabProjects").addEventListener("click", switchToProjectsView);
+
+  // foto de trabajador
+  workerSelect.addEventListener("change", updateWorkerPhoto);
+  updateWorkerPhoto(); // estado inicial
 
   renderTable();
 }
