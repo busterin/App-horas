@@ -1,13 +1,15 @@
 /* ==========================
    Reset básico
    ========================== */
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
 }
@@ -15,36 +17,38 @@ html, body {
 /* ==========================
    Base de la app
    ========================== */
+
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #F5BF43; /* color tomado de la imagen */
+  background-color: #F5BF43; /* color de la imagen */
   color: #222;
 }
 
-/* ==========================
-   Cabecera
-   ========================== */
+/* Cabecera transparente con logo grande */
+
 .app-header {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.2rem 1.5rem;
+  padding: 1rem 1.5rem;
   background: transparent;
+  box-shadow: none;
+  border-bottom: none;
 }
 
 .app-logo {
-  height: 100px;  /* logo más grande */
+  height: 96px; /* logo más grande */
   width: auto;
+  display: block;
 }
 
 .app-header h1 {
-  font-size: 1.7rem;
+  font-size: 1.6rem;
   margin: 0;
 }
 
-/* ==========================
-   Contenido principal
-   ========================== */
+/* Contenedor principal */
+
 .app-main {
   max-width: 1100px;
   margin: 0 auto;
@@ -57,23 +61,26 @@ body {
 /* ==========================
    Tabs
    ========================== */
+
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
 .tab {
-  background: rgba(255,255,255,0.55);
   border: none;
+  background: rgba(255, 255, 255, 0.5);
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: 999px;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: 0.15s;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .tab.active {
-  background: white;
+  background: #ffffff;
   font-weight: 600;
 }
 
@@ -84,31 +91,34 @@ body {
 /* ==========================
    Tarjetas
    ========================== */
+
 .card {
-  background: white;
-  border-radius: 14px;
-  padding: 1.25rem 1.4rem;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.25rem 1.25rem 1.4rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .card h2 {
-  margin: 0 0 0.8rem;
+  margin: 0 0 0.75rem;
+  font-size: 1.2rem;
 }
 
 .hint {
+  margin: 0 0 0.9rem;
   font-size: 0.85rem;
   color: #555;
-  margin: 0 0 0.8rem;
 }
 
 /* ==========================
    Campos de formulario
    ========================== */
+
 .field {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.8rem;
 }
 
 .field span {
@@ -116,31 +126,40 @@ body {
   font-weight: 500;
 }
 
+.field.small {
+  min-width: 180px;
+}
+
 .inline-field {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
 select,
 input[type="week"],
-input[type="number"] {
-  padding: 0.45rem 0.6rem;
+input[type="number"],
+input[type="text"] {
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid #d0d0d0;
+  padding: 0.4rem 0.6rem;
   font-size: 0.95rem;
+  font-family: inherit;
 }
 
 select:focus,
 input:focus {
   outline: 2px solid #f2a300;
+  border-color: #f2a300;
 }
 
 /* ==========================
-   Foto del monognomo
+   Foto monognomo
    ========================== */
+
 .worker-photo-wrapper {
-  display: none;
-  margin-bottom: 0.9rem;
+  margin: 0.25rem 0 0.8rem;
+  display: none; /* se muestra desde JS cuando haya selección */
 }
 
 .worker-photo {
@@ -148,56 +167,100 @@ input:focus {
   height: 96px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #f2a300;
+  border: 2px solid #f2a300;
+}
+
+/* Avatares en tablas */
+
+.worker-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.worker-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* ==========================
-   Filtros centrados
+   Filtros (Resumen rápido)
    ========================== */
+
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .filters-centered {
   justify-content: center;
+  align-items: flex-end;
 }
 
 .filters-button {
   align-self: flex-end;
-  padding: 0.45rem 1rem;
+  height: 2.4rem;
 }
 
 /* ==========================
    Botones
    ========================== */
+
 .btn-primary,
-.btn-secondary {
-  border: none;
+.btn-secondary,
+.icon-btn {
+  font-family: inherit;
+  font-size: 0.95rem;
   border-radius: 999px;
-  padding: 0.5rem 1rem;
+  border: none;
   cursor: pointer;
-  transition: 0.15s;
+  padding: 0.45rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.1s ease;
 }
 
 .btn-primary {
   background: #f2a300;
   color: #222;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
 .btn-secondary {
-  background: #fff;
-  border: 1px solid #ccc;
+  background: #ffffff;
+  color: #333;
+  border: 1px solid #e0e0e0;
 }
 
 .btn-secondary:hover {
   background: #f7f7f7;
+}
+
+.icon-btn {
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+}
+
+.icon-btn.edit:hover {
+  border-color: #2f80ed;
+  background: rgba(47, 128, 237, 0.08);
+}
+
+.icon-btn.delete:hover {
+  border-color: #eb5757;
+  background: rgba(235, 87, 87, 0.08);
 }
 
 .full-width {
@@ -207,9 +270,11 @@ input:focus {
 /* ==========================
    Mensajes
    ========================== */
+
 .message {
-  min-height: 1.2em;
-  margin-top: 0.5rem;
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  min-height: 1.1em;
 }
 
 .message.ok {
@@ -221,8 +286,43 @@ input:focus {
 }
 
 /* ==========================
-   Vistas de proyectos
+   Tablas y vistas de proyectos
    ========================== */
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  padding: 0.45rem 0.4rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+th {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.total-row {
+  font-weight: 600;
+  background: #fff7e0;
+}
+
+/* Bloques de empresa y proyecto */
+
 .company-view {
   display: flex;
   flex-direction: column;
@@ -230,14 +330,40 @@ input:focus {
 }
 
 .company-block {
-  padding-top: 0.5rem;
-  border-top: 1px solid #ddd;
+  padding: 0.75rem 0 0.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.company-block h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.company-block h4 {
+  margin: 0.6rem 0 0.35rem;
+  font-size: 0.98rem;
 }
 
 .company-total,
 .global-total {
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
   font-weight: 600;
+}
+
+.project-actions {
+  margin-top: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* ==========================
+   Otros
+   ========================== */
+
+.project-month-label {
+  font-size: 0.8rem;
+  color: #666;
 }
 
 .hidden {
@@ -245,38 +371,58 @@ input:focus {
 }
 
 /* ==========================
-   Responsivo
+   Responsive
    ========================== */
+
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .app-logo {
     height: 80px;
   }
-  .filters {
-    justify-content: center;
+
+  .app-main {
+    padding: 0.5rem 1rem 1.5rem;
+  }
+
+  .card {
+    padding: 1rem 0.9rem 1.1rem;
   }
 }
 
 /* ==========================
-   Estilos para impresión (PDF)
+   Estilos de impresión
+   (para exportar a PDF la vista de proyectos)
    ========================== */
+
 @media print {
   body {
-    background: white;
+    background: #ffffff;
   }
+
   .app-header,
   .tabs,
-  #mainView {
+  #mainView,
+  #manageProjectsView,
+  .btn-primary,
+  .btn-secondary {
     display: none !important;
   }
+
   #projectsView {
     display: block !important;
   }
+
   .card {
     box-shadow: none;
+    border-radius: 0;
     padding: 0;
+  }
+
+  .company-block {
+    page-break-inside: avoid;
   }
 }
