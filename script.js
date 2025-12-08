@@ -1,6 +1,8 @@
-// Claves en localStorage
+// ==============================
+//  Claves en localStorage
+// ==============================
 const STORAGE_KEYS = {
-  PROJECTS_BY_COMPANY: "appHoras_proyectosPorEmpresa",
+  PROJECTS_BY_COMPANY: "appHoras_proyectosPorEmpresa", // ahora incluye meses
   ENTRIES: "appHoras_registros",
   WORKERS: "appHoras_trabajadores"
 };
@@ -29,12 +31,13 @@ const DEFAULT_WORKERS = [
   "Voby"
 ];
 
-// Proyectos iniciales por empresa (ejemplo; cámbialos por los reales cuando quieras)
+// Proyectos iniciales por empresa *y mes*.
+// Estructura: { empresa: { "YYYY-MM": ["Proyecto 1", "Proyecto 2"] } }
 const DEFAULT_PROJECTS_BY_COMPANY = {
-  Monognomo: ["Mono Proyecto 1", "Mono Proyecto 2"],
-  Neozink: ["Neo Proyecto 1", "Neo Proyecto 2"],
-  Yurmuvi: ["Yur Proyecto 1"],
-  General: [] // General no usa lista de proyectos, se guarda como "General"
+  Monognomo: {},
+  Neozink: {},
+  Yurmuvi: {},
+  General: {} // General no usa proyectos, se guarda como "General"
 };
 
 // =====================================
@@ -68,7 +71,10 @@ function saveToStorage(key, value) {
 }
 
 function loadProjectsByCompany() {
-  return loadFromStorage(STORAGE_KEYS.PROJECTS_BY_COMPANY, DEFAULT_PROJECTS_BY_COMPANY);
+  return loadFromStorage(
+    STORAGE_KEYS.PROJECTS_BY_COMPANY,
+    DEFAULT_PROJECTS_BY_COMPANY
+  );
 }
 
 function saveProjectsByCompany(map) {
@@ -129,14 +135,14 @@ function showMessage(text, type = "ok") {
 // extensiones que vamos a probar, en orden
 const WORKER_IMAGE_EXTENSIONS = [".jpeg", ".jpg", ".png"];
 
-// mapa manual: nombre del trabajador → base del fichero
-// (sin extensión)
+// mapa manual: nombre del trabajador → base del fichero (sin extensión)
+// ⚠️ Respeta lo que tú ya tienes en /images
 const WORKER_IMAGE_BASE_MAP = {
-  "Elías": "Elias",
-  "Inés": "Ines",
-  "María C": "Mariac",
-  "María M": "Mariam"
-  // el resto usará el nombre tal cual
+  "Elías": "Elias",   // Elias.jpeg
+  "Inés": "Ines",     // Ines.jpeg
+  "María C": "Mariac",// Mariac.jpeg
+  "María M": "Mariam" // Mariam.jpeg
+  // el resto usa el nombre tal cual
 };
 
 // devuelve el "base name" del archivo para ese trabajador
@@ -207,44 +213,83 @@ function createWorkerCell(workerName) {
 }
 
 // =====================================
-//   Cambio de empresa: proyectos
+//   Mes a partir de la semana
 // =====================================
 
-function updateProjectSelectForCompany() {
+// Convierte el valor del input type="week" (YYYY-Www) a "YYYY-MM" (mes aproximado)
+function getMonthKeyFromWeek(weekValue) {
+  if (!weekValue) return null;
+  const parts = weekValue.split("-W");
+  if (parts.length !== 2) return null;
+  const year = parseInt(parts[0], 10);
+  const week = parseInt(parts[1], 10);
+  if (isNaN(year) || isNaN(week)) return null;
+
+  // aproximación: primer día del año + (week-1)*7 días
+  const d = new Date(year, 0, 1 + (week - 1) * 7);
+  const month = d.getMonth() + 1; // 0-11 -> 1-12
+  const mm = String(month).padStart(2, "0");
+  return `${year}-${mm}`; // ej: "2025-03"
+}
+
+// Devuelve proyectos para una empresa y un mes concreto
+function getProjectsForCompanyAndMonth(company, monthKey) {
+  if (!company || !monthKey) return [];
+  const map = loadProjectsByCompany();
+  const companyData = map[company] || {};
+  const list = companyData[monthKey] || [];
+  // clon para no modificar el original
+  return [...list];
+}
+
+// =====================================
+//   Cambio de empresa / semana: proyectos
+// =====================================
+
+function updateProjectSelect() {
   const companySelect = document.getElementById("companySelect");
   const projectSelect = document.getElementById("projectSelect");
   const projectWrapper = document.getElementById("projectFieldWrapper");
+  const weekInput = document.getElementById("weekInput");
+
   const company = companySelect.value;
-  const projectsByCompany = loadProjectsByCompany();
+  const week = weekInput.value;
+  const monthKey = getMonthKeyFromWeek(week);
 
-  if (!company) {
+  // Si no hay empresa o es General, ocultamos proyectos
+  if (!company || company === "General") {
     projectWrapper.classList.add("hidden");
     projectSelect.disabled = true;
     projectSelect.innerHTML = "";
     return;
   }
 
-  if (company === "General") {
+  // Si no hay semana, también ocultamos proyectos (hay que escoger semana antes)
+  if (!week || !monthKey) {
     projectWrapper.classList.add("hidden");
     projectSelect.disabled = true;
     projectSelect.innerHTML = "";
     return;
   }
 
+  // Empresa normal + mes definido
   projectWrapper.classList.remove("hidden");
   projectSelect.disabled = false;
 
-  const projects = projectsByCompany[company] || [];
+  const projects = getProjectsForCompanyAndMonth(company, monthKey);
   fillSelect(projectSelect, projects, { placeholder: "Elige un proyecto" });
 }
 
 // =====================================
-//   Gestión de proyectos
+//   Gestión de proyectos (por meses)
 // =====================================
 
 function handleAddProject() {
   const companySelect = document.getElementById("companySelect");
+  const weekInput = document.getElementById("weekInput");
   const company = companySelect.value;
+  const week = weekInput.value;
+  const monthKey = getMonthKeyFromWeek(week);
 
   if (!company) {
     alert("Primero elige una empresa.");
@@ -256,27 +301,60 @@ function handleAddProject() {
     return;
   }
 
-  const name = prompt(`Nombre del nuevo proyecto para ${company}:`);
-  if (!name) return;
-  const trimmed = name.trim();
-  if (!trimmed) return;
-
-  const projectsByCompany = loadProjectsByCompany();
-  const list = projectsByCompany[company] || [];
-
-  if (list.includes(trimmed)) {
-    alert("Ese proyecto ya existe en esa empresa.");
+  if (!week || !monthKey) {
+    alert("Primero elige la semana. El proyecto se asociará al mes de esa semana.");
     return;
   }
 
-  list.push(trimmed);
-  list.sort((a, b) => a.localeCompare(b, "es"));
-  projectsByCompany[company] = list;
+  const name = prompt(`Nombre del nuevo proyecto para ${company} (mes ${monthKey}):`);
+  if (!name) return;
+  const projectName = name.trim();
+  if (!projectName) return;
+
+  // Preguntar por otros meses opcionales (YYYY-MM,YYYY-MM,...)
+  const extra = prompt(
+    "Indica otros meses (formato YYYY-MM) separados por comas si quieres que también aparezca en ellos.\nEjemplo: 2025-04,2025-05\n\nDéjalo vacío si solo debe aparecer en " +
+      monthKey
+  );
+
+  const monthKeys = [monthKey];
+
+  if (extra) {
+    extra
+      .split(",")
+      .map(m => m.trim())
+      .filter(m => m)
+      .forEach(m => {
+        // validar formato básico YYYY-MM
+        if (/^\d{4}-\d{2}$/.test(m) && !monthKeys.includes(m)) {
+          monthKeys.push(m);
+        }
+      });
+  }
+
+  const projectsByCompany = loadProjectsByCompany();
+  if (!projectsByCompany[company]) {
+    projectsByCompany[company] = {};
+  }
+  const companyMap = projectsByCompany[company];
+
+  monthKeys.forEach(mKey => {
+    const list = companyMap[mKey] || [];
+    if (!list.includes(projectName)) {
+      list.push(projectName);
+      list.sort((a, b) => a.localeCompare(b, "es"));
+    }
+    companyMap[mKey] = list;
+  });
+
   saveProjectsByCompany(projectsByCompany);
 
+  // Recargar select de proyectos para el mes actual
+  updateProjectSelect();
   const projectSelect = document.getElementById("projectSelect");
-  fillSelect(projectSelect, list, { placeholder: "Elige un proyecto" });
-  projectSelect.value = trimmed;
+  if (projectSelect && projectSelect.options.length > 0) {
+    projectSelect.value = projectName;
+  }
 }
 
 // =====================================
@@ -326,19 +404,31 @@ function handleDeleteClick(id) {
   deleteEntry(id);
 }
 
-// borrar proyecto completo + sus entradas
+// borrar proyecto completo + sus entradas (en todos los meses)
 function deleteProject(company, project) {
-  if (!confirm(`¿Seguro que quieres borrar el proyecto "${project}" de "${company}" y todas sus horas asociadas?`)) {
+  if (
+    !confirm(
+      `¿Seguro que quieres borrar el proyecto "${project}" de "${company}" y todas sus horas asociadas en todos los meses?`
+    )
+  ) {
     return;
   }
 
+  // Borrar entradas
   let entries = loadEntries();
   entries = entries.filter(e => !(e.company === company && e.project === project));
   saveEntries(entries);
 
+  // Borrar proyecto de todos los meses de esa empresa
   const projectsByCompany = loadProjectsByCompany();
   if (projectsByCompany[company]) {
-    projectsByCompany[company] = projectsByCompany[company].filter(p => p !== project);
+    const companyMap = projectsByCompany[company];
+    Object.keys(companyMap).forEach(monthKey => {
+      companyMap[monthKey] = companyMap[monthKey].filter(p => p !== project);
+      if (companyMap[monthKey].length === 0) {
+        delete companyMap[monthKey];
+      }
+    });
     saveProjectsByCompany(projectsByCompany);
   }
 
@@ -525,7 +615,8 @@ function renderCompanyView() {
 
       const table = document.createElement("table");
       const thead = document.createElement("thead");
-      thead.innerHTML = "<tr><th>Trabajador</th><th>Semana</th><th>Horas</th><th>Acciones</th></tr>";
+      thead.innerHTML =
+        "<tr><th>Trabajador</th><th>Semana</th><th>Horas</th><th>Acciones</th></tr>";
       table.appendChild(thead);
 
       const tbody = document.createElement("tbody");
@@ -579,6 +670,7 @@ function renderCompanyView() {
       tdLabel.textContent = "Total proyecto";
       const tdTotal = document.createElement("td");
       tdTotal.textContent = projectTotal.toString().replace(".", ",");
+
       trTotal.appendChild(tdLabel);
       trTotal.appendChild(tdTotal);
       tbody.appendChild(trTotal);
@@ -592,7 +684,9 @@ function renderCompanyView() {
       const deleteProjectBtn = document.createElement("button");
       deleteProjectBtn.className = "icon-btn delete";
       deleteProjectBtn.textContent = "🗑️ Borrar proyecto completo";
-      deleteProjectBtn.addEventListener("click", () => deleteProject(company, project));
+      deleteProjectBtn.addEventListener("click", () =>
+        deleteProject(company, project)
+      );
       projectActions.appendChild(deleteProjectBtn);
       block.appendChild(projectActions);
 
@@ -655,10 +749,7 @@ function exportToCSV() {
     e.hours
   ]);
 
-  const csvLines = [
-    header.join(";"),
-    ...rows.map(r => r.join(";"))
-  ];
+  const csvLines = [header.join(";"), ...rows.map(r => r.join(";"))];
   const csvContent = csvLines.join("\n");
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -697,13 +788,15 @@ function switchToProjectsView() {
 
 function init() {
   const workers = loadWorkers();
-  loadProjectsByCompany();
+  loadProjectsByCompany(); // inicializar por si acaso
 
   const workerSelect = document.getElementById("workerSelect");
   const companySelect = document.getElementById("companySelect");
   const projectSelect = document.getElementById("projectSelect");
   const filterWorker = document.getElementById("filterWorker");
   const filterCompany = document.getElementById("filterCompany");
+  const weekInput = document.getElementById("weekInput");
+  const filterWeek = document.getElementById("filterWeek");
 
   // Trabajadores
   fillSelect(workerSelect, workers, { placeholder: "Elige un trabajador" });
@@ -711,7 +804,7 @@ function init() {
   // Empresas
   fillSelect(companySelect, COMPANIES, { placeholder: "Elige una empresa" });
 
-  // Proyectos (se rellenan al cambiar la empresa)
+  // Proyectos: se rellenan en función de empresa + semana
   projectSelect.innerHTML = "";
   projectSelect.disabled = true;
 
@@ -741,13 +834,12 @@ function init() {
     filterCompany.appendChild(opt);
   });
 
-  const weekInput = document.getElementById("weekInput");
-  const filterWeek = document.getElementById("filterWeek");
   weekInput.value = "";
   filterWeek.value = "";
 
   // Eventos
-  companySelect.addEventListener("change", updateProjectSelectForCompany);
+  companySelect.addEventListener("change", updateProjectSelect);
+  weekInput.addEventListener("change", updateProjectSelect);
   document.getElementById("addProjectBtn").addEventListener("click", handleAddProject);
   document.getElementById("saveBtn").addEventListener("click", handleSaveHours);
   document.getElementById("filterBtn").addEventListener("click", handleFilter);
