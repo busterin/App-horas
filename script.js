@@ -8,7 +8,7 @@ const STORAGE_KEYS = {
 // Empresas disponibles
 const COMPANIES = ["Monognomo", "Neozink", "Yurmuvi", "General"];
 
-// Trabajadores (SIN iconos, solo nombre)
+// Trabajadores (sin iconos, solo nombre)
 const DEFAULT_WORKERS = [
   "Alba",
   "Buster",
@@ -129,9 +129,25 @@ function showMessage(text, type = "ok") {
 // extensiones que vamos a probar, en orden
 const WORKER_IMAGE_EXTENSIONS = [".jpeg", ".jpg", ".png"];
 
+// mapa manual: nombre del trabajador → base del fichero
+// (sin extensión)
+const WORKER_IMAGE_BASE_MAP = {
+  "Elías": "Elias",
+  "Inés": "Inés",
+  "María C": "María C",
+  "María M": "María M"
+  // el resto usará el nombre tal cual
+};
+
+// devuelve el "base name" del archivo para ese trabajador
+function getWorkerImageBase(workerName) {
+  return WORKER_IMAGE_BASE_MAP[workerName] || workerName;
+}
+
 // Construye un array de rutas posibles para un trabajador
 function getPossibleImagePaths(workerName) {
-  return WORKER_IMAGE_EXTENSIONS.map(ext => `images/${workerName}${ext}`);
+  const base = getWorkerImageBase(workerName);
+  return WORKER_IMAGE_EXTENSIONS.map(ext => `images/${base}${ext}`);
 }
 
 // Carga una imagen probando una ruta tras otra
@@ -460,7 +476,6 @@ function renderTable(filter = {}) {
 
 // =====================================
 //   Vista "Todos los proyectos"
-//   (agrupada por empresa/proyecto)
 // =====================================
 
 function renderCompanyView() {
@@ -564,7 +579,6 @@ function renderCompanyView() {
       tdLabel.textContent = "Total proyecto";
       const tdTotal = document.createElement("td");
       tdTotal.textContent = projectTotal.toString().replace(".", ",");
-
       trTotal.appendChild(tdLabel);
       trTotal.appendChild(tdTotal);
       tbody.appendChild(trTotal);
