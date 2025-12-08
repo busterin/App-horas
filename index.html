@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Horas de proyecto</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Registro de horas</h1>
+  </header>
+
+  <main class="app-main">
+    <section class="card">
+      <h2>Introducir horas</h2>
+
+      <!-- Selección de trabajador -->
+      <label class="field">
+        <span>Trabajador</span>
+        <select id="workerSelect"></select>
+      </label>
+
+      <!-- Selección de proyecto -->
+      <label class="field">
+        <span>Proyecto</span>
+        <div class="inline-field">
+          <select id="projectSelect"></select>
+          <button type="button" id="addProjectBtn" class="btn-secondary">+</button>
+        </div>
+      </label>
+
+      <!-- Selección de semana -->
+      <label class="field">
+        <span>Semana</span>
+        <input type="week" id="weekInput" />
+      </label>
+
+      <!-- Horas -->
+      <label class="field">
+        <span>Horas trabajadas</span>
+        <input type="number" id="hoursInput" min="0" step="0.25" inputmode="decimal" />
+      </label>
+
+      <button type="button" id="saveBtn" class="btn-primary full-width">
+        Guardar horas
+      </button>
+
+      <p id="message" class="message" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>Resumen rápido</h2>
+
+      <div class="filters">
+        <label class="field small">
+          <span>Trabajador</span>
+          <select id="filterWorker"></select>
+        </label>
+
+        <label class="field small">
+          <span>Semana</span>
+          <input type="week" id="filterWeek" />
+        </label>
+
+        <button type="button" id="filterBtn" class="btn-secondary">
+          Filtrar
+        </button>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Trabajador</th>
+              <th>Proyecto</th>
+              <th>Semana</th>
+              <th>Horas</th>
+            </tr>
+          </thead>
+          <tbody id="entriesTableBody">
+            <!-- Filas generadas por JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Exportar</h2>
+      <button type="button" id="exportBtn" class="btn-primary full-width">
+        Exportar a Excel (CSV)
+      </button>
+      <p class="hint">
+        Se descargará un archivo CSV que puedes abrir con Excel o subir a Google Sheets.
+      </p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
