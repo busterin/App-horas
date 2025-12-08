@@ -366,3 +366,25 @@ th {
 .project-actions {
   margin: 4px 0 8px;
 }
+
+/* Fondo general de la app */
+body {
+  background-color: #F5BF43;
+}
+
+/* Cabecera transparente */
+.app-header {
+  background: transparent;
+  box-shadow: none;        /* por si tenía sombra */
+  border-bottom: none;     /* por si tenía línea inferior */
+}
+
+/* Contenedor principal sin fondo extra (opcional) */
+.app-main {
+  background: transparent;
+}
+
+/* Aseguramos que las tarjetas siguen siendo blancas */
+.card {
+  background: #ffffff;
+}
