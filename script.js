@@ -29,7 +29,7 @@ const DEFAULT_WORKERS = [
   "Voby"
 ];
 
-// Proyectos iniciales por empresa (ejemplo)
+// Proyectos iniciales por empresa (ejemplo; cámbialos por los reales cuando quieras)
 const DEFAULT_PROJECTS_BY_COMPANY = {
   Monognomo: ["Mono Proyecto 1", "Mono Proyecto 2"],
   Neozink: ["Neo Proyecto 1", "Neo Proyecto 2"],
@@ -37,7 +37,9 @@ const DEFAULT_PROJECTS_BY_COMPANY = {
   General: [] // General no usa lista de proyectos, se guarda como "General"
 };
 
-// ===== Utilidades de almacenamiento =====
+// =====================================
+//   Utilidades de almacenamiento
+// =====================================
 
 function deepClone(value) {
   try {
@@ -89,7 +91,9 @@ function saveEntries(entries) {
   saveToStorage(STORAGE_KEYS.ENTRIES, entries);
 }
 
-// ===== Utilidades de UI =====
+// =====================================
+//   Utilidades de UI generales
+// =====================================
 
 function fillSelect(selectEl, items, { placeholder } = {}) {
   selectEl.innerHTML = "";
@@ -118,16 +122,37 @@ function showMessage(text, type = "ok") {
   }
 }
 
-// ===== Fotos de trabajadores =====
+// =====================================
+//   Fotos de trabajadores
+// =====================================
 
-// cambia aquí la extensión si tus fotos no son .png
-const WORKER_IMAGE_EXTENSION = ".png";
+// extensiones que vamos a probar, en orden
+const WORKER_IMAGE_EXTENSIONS = [".jpeg", ".jpg", ".png"];
 
-function getWorkerImageSrc(workerName) {
-  // asume 'images/NOMBRE.png'
-  return "images/" + workerName + WORKER_IMAGE_EXTENSION;
+// Construye un array de rutas posibles para un trabajador
+function getPossibleImagePaths(workerName) {
+  return WORKER_IMAGE_EXTENSIONS.map(ext => `images/${workerName}${ext}`);
 }
 
+// Carga una imagen probando una ruta tras otra
+function loadWorkerImage(imgElement, workerName) {
+  const paths = getPossibleImagePaths(workerName);
+  let index = 0;
+
+  function tryNext() {
+    if (index >= paths.length) {
+      imgElement.src = "images/default.png"; // fallback si no existe ninguna
+      return;
+    }
+    const path = paths[index++];
+    imgElement.onerror = tryNext;   // si falla, prueba la siguiente extensión
+    imgElement.src = path;          // intenta cargar
+  }
+
+  tryNext();
+}
+
+// Actualiza la foto del formulario al elegir trabajador
 function updateWorkerPhoto() {
   const select = document.getElementById("workerSelect");
   const wrapper = document.querySelector(".worker-photo-wrapper");
@@ -143,20 +168,19 @@ function updateWorkerPhoto() {
     return;
   }
 
-  img.src = getWorkerImageSrc(worker);
-  img.alt = "Foto de " + worker;
   wrapper.style.display = "block";
+  loadWorkerImage(img, worker);
+  img.alt = "Foto de " + worker;
 }
 
-// crea una celda <td> con foto + nombre
+// crea una celda <td> con foto + nombre para las tablas
 function createWorkerCell(workerName) {
   const td = document.createElement("td");
   td.className = "worker-cell";
 
   const img = document.createElement("img");
   img.className = "worker-avatar";
-  img.src = getWorkerImageSrc(workerName);
-  img.alt = workerName;
+  loadWorkerImage(img, workerName);
 
   const span = document.createElement("span");
   span.textContent = workerName;
@@ -166,7 +190,9 @@ function createWorkerCell(workerName) {
   return td;
 }
 
-// ===== Cambio de empresa: actualizar proyectos =====
+// =====================================
+//   Cambio de empresa: proyectos
+// =====================================
 
 function updateProjectSelectForCompany() {
   const companySelect = document.getElementById("companySelect");
@@ -196,7 +222,9 @@ function updateProjectSelectForCompany() {
   fillSelect(projectSelect, projects, { placeholder: "Elige un proyecto" });
 }
 
-// ===== Gestión de proyectos =====
+// =====================================
+//   Gestión de proyectos
+// =====================================
 
 function handleAddProject() {
   const companySelect = document.getElementById("companySelect");
@@ -235,7 +263,9 @@ function handleAddProject() {
   projectSelect.value = trimmed;
 }
 
-// ===== Edición / borrado de registros =====
+// =====================================
+//   Edición y borrado de registros
+// =====================================
 
 function updateEntryHours(id, newHours) {
   const entries = loadEntries();
@@ -300,7 +330,9 @@ function deleteProject(company, project) {
   renderCompanyView();
 }
 
-// ===== Guardar horas =====
+// =====================================
+//   Guardar horas
+// =====================================
 
 function handleSaveHours() {
   const workerSelect = document.getElementById("workerSelect");
@@ -354,7 +386,9 @@ function handleSaveHours() {
   renderTable();
 }
 
-// ===== Tabla de resumen rápido =====
+// =====================================
+//   Tabla de resumen rápido
+// =====================================
 
 function renderTable(filter = {}) {
   const tbody = document.getElementById("entriesTableBody");
@@ -424,7 +458,10 @@ function renderTable(filter = {}) {
   });
 }
 
-// ===== Vista "Todos los proyectos" (agrupada) =====
+// =====================================
+//   Vista "Todos los proyectos"
+//   (agrupada por empresa/proyecto)
+// =====================================
 
 function renderCompanyView() {
   const container = document.getElementById("companyView");
@@ -566,7 +603,9 @@ function renderCompanyView() {
   container.appendChild(globalTotalEl);
 }
 
-// ===== Filtros =====
+// =====================================
+//   Filtros
+// =====================================
 
 function handleFilter() {
   const worker = document.getElementById("filterWorker").value;
@@ -581,7 +620,9 @@ function handleFilter() {
   renderTable(filter);
 }
 
-// ===== Exportar CSV =====
+// =====================================
+//   Exportar CSV
+// =====================================
 
 function exportToCSV() {
   const entries = loadEntries();
@@ -617,7 +658,9 @@ function exportToCSV() {
   URL.revokeObjectURL(url);
 }
 
-// ===== Tabs =====
+// =====================================
+//   Tabs
+// =====================================
 
 function switchToMainView() {
   document.getElementById("mainView").classList.remove("hidden");
@@ -634,7 +677,9 @@ function switchToProjectsView() {
   renderCompanyView();
 }
 
-// ===== Init =====
+// =====================================
+//   Init
+// =====================================
 
 function init() {
   const workers = loadWorkers();
@@ -652,7 +697,7 @@ function init() {
   // Empresas
   fillSelect(companySelect, COMPANIES, { placeholder: "Elige una empresa" });
 
-  // Proyectos (se rellenan al cambiar empresa)
+  // Proyectos (se rellenan al cambiar la empresa)
   projectSelect.innerHTML = "";
   projectSelect.disabled = true;
 
@@ -697,7 +742,7 @@ function init() {
   document.getElementById("tabMain").addEventListener("click", switchToMainView);
   document.getElementById("tabProjects").addEventListener("click", switchToProjectsView);
 
-  // foto de trabajador
+  // foto de trabajador en el formulario
   workerSelect.addEventListener("change", updateWorkerPhoto);
   updateWorkerPhoto(); // estado inicial
 
