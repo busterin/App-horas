@@ -4,24 +4,26 @@
   box-sizing: border-box;
 }
 
+/* === FONDO GENERAL === */
 body {
   margin: 0;
   padding: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #F5BF43; /* color de la imagen */
+  background: #F3B63F; /* color imagen */
   color: #111827;
 }
 
-/* CABECERA CON LOGO */
+/* === CABECERA TRANSPARENTE === */
 .app-header {
   background: transparent; /* antes #111827 */
-  color: #111827;          /* texto oscuro sobre fondo amarillo */
+  color: #111827;
   padding: 16px 16px 12px;
   text-align: center;
 }
 
+/* LOGO MÁS GRANDE */
 .app-logo {
-  height: 70px;            /* antes 42px */
+  height: 70px;   /* antes 42px */
   margin-bottom: 6px;
   display: block;
   margin-left: auto;
@@ -29,7 +31,7 @@ body {
 }
 
 .app-header h1 {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   margin: 0;
 }
 
@@ -41,7 +43,6 @@ body {
 }
 
 /* TABS */
-
 .tabs {
   display: flex;
   margin-bottom: 10px;
@@ -66,8 +67,7 @@ body {
   font-weight: 600;
 }
 
-/* CARDS */
-
+/* CARDS (SE MANTIENEN BLANCAS) */
 .card {
   background: #ffffff;
   border-radius: 12px;
@@ -82,7 +82,6 @@ body {
 }
 
 /* FORMULARIO */
-
 .field {
   display: flex;
   flex-direction: column;
@@ -124,11 +123,10 @@ select:focus {
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
 }
 
-/* FOTO DEL TRABAJADOR (FORMULARIO) */
-
+/* FOTO DEL TRABAJADOR */
 .worker-photo-wrapper {
   margin-bottom: 8px;
-  display: none; /* se activa por JS cuando hay trabajador seleccionado */
+  display: none;
 }
 
 .worker-photo {
@@ -139,8 +137,7 @@ select:focus {
   border: 2px solid #e5e7eb;
 }
 
-/* ETIQUETA DEL MES PARA PROYECTOS */
-
+/* ETIQUETA MES */
 .project-month-label {
   font-size: 0.75rem;
   color: #6b7280;
@@ -148,7 +145,6 @@ select:focus {
 }
 
 /* BOTONES */
-
 .btn-primary,
 .btn-secondary,
 .icon-btn {
@@ -191,8 +187,7 @@ select:focus {
   margin-top: 4px;
 }
 
-/* MENSAJES */
-
+/* MENSAJE */
 .message {
   min-height: 20px;
   font-size: 0.8rem;
@@ -208,7 +203,6 @@ select:focus {
 }
 
 /* FILTROS */
-
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -221,71 +215,27 @@ select:focus {
   flex: 1 1 30%;
 }
 
-/* TABLAS */
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-}
-
-th,
-td {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 6px 4px;
-  text-align: left;
-}
-
-th {
-  font-weight: 600;
-  color: #4b5563;
-}
-
-/* CELDA DE TRABAJADOR CON FOTO */
-
-.worker-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.worker-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid #e5e7eb;
-}
-
-/* TEXTOS PEQUEÑOS */
-
+/* HINT */
 .hint {
   font-size: 0.75rem;
   color: #6b7280;
   margin-top: 6px;
 }
 
-/* PARA OCULTAR VISTAS O CAMPOS */
-
+/* HIDDEN */
 .hidden {
   display: none;
 }
 
-/* ============================= */
-/*   ESTILOS PARA "TODOS LOS
-      PROYECTOS" y "GESTIONAR"
-   ============================= */
+/* ——————————————— */
+/* VISTAS DE PROYECTOS Y GESTIÓN */
+/* ——————————————— */
 
 .company-view {
   margin-top: 8px;
   font-size: 0.8rem;
 }
 
-/* Bloque de cada empresa */
 .company-block {
   margin-top: 14px;
   padding: 12px;
@@ -294,7 +244,6 @@ th {
   border: 1px solid #e5e7eb;
 }
 
-/* Empresa destacada */
 .company-block h3 {
   margin: 0 0 6px;
   font-size: 0.95rem;
@@ -306,7 +255,6 @@ th {
   color: #f9fafb;
 }
 
-/* Proyecto destacado */
 .company-block h4 {
   margin: 8px 0 4px;
   font-size: 0.85rem;
@@ -314,11 +262,9 @@ th {
   display: inline-block;
   padding: 3px 8px;
   border-radius: 999px;
-  background: #dbeafe; /* azul suave */
+  background: #dbeafe;
   color: #1e3a8a;
 }
-
-/* TABLAS DE PROYECTOS CON CUADRÍCULA */
 
 .company-view table {
   margin-top: 4px;
@@ -327,28 +273,24 @@ th {
   overflow: hidden;
 }
 
-/* cabecera */
 .company-view th {
   background: #e5e7eb;
   color: #111827;
   border: 1px solid #d1d5db;
 }
 
-/* celdas */
 .company-view td {
   border: 1px solid #d1d5db;
 }
 
-/* filas alternas */
 .company-view tbody tr:nth-child(odd):not(.total-row) {
   background: #f9fafb;
 }
 
-/* total por proyecto (en pestaña "ver todos los proyectos") */
 .total-row td {
   font-weight: 600;
   border-top: 2px solid #9ca3af;
-  background: #fef3c7; /* amarillo suave */
+  background: #fef3c7;
 }
 
 .company-total {
@@ -361,8 +303,4 @@ th {
   padding-top: 6px;
   border-top: 1px dashed #9ca3af;
   font-weight: 700;
-}
-
-.project-actions {
-  margin: 4px 0 8px;
 }
