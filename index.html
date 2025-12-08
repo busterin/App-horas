@@ -30,6 +30,8 @@
 
     <!-- VISTA PRINCIPAL -->
     <div id="mainView">
+
+      <!-- INTRODUCIR HORAS -->
       <section class="card">
         <h2>Introducir horas</h2>
 
@@ -39,7 +41,7 @@
           <select id="workerSelect"></select>
         </label>
 
-        <!-- Foto del trabajador -->
+        <!-- Foto -->
         <div class="worker-photo-wrapper">
           <img id="workerPhoto" class="worker-photo" alt="Foto del monognomo seleccionado" />
         </div>
@@ -50,7 +52,7 @@
           <select id="companySelect"></select>
         </label>
 
-        <!-- Proyecto + mes -->
+        <!-- Proyecto -->
         <label class="field" id="projectFieldWrapper">
           <span>Proyecto</span>
           <div class="inline-field">
@@ -81,11 +83,13 @@
         <p id="message" class="message" aria-live="polite"></p>
       </section>
 
-      <!-- RESUMEN RÁPIDO -->
+      <!-- RESUMEN RÁPIDO SIN TABLA -->
       <section class="card">
         <h2>Resumen rápido</h2>
+        <p class="hint">Filtra los datos de la aplicación según monognomo, empresa o semana.</p>
 
-        <div class="filters">
+        <div class="filters filters-centered">
+
           <label class="field small">
             <span>Monognomos</span>
             <select id="filterWorker"></select>
@@ -101,57 +105,43 @@
             <input type="week" id="filterWeek" />
           </label>
 
-          <button type="button" id="filterBtn" class="btn-secondary">Filtrar</button>
-        </div>
-
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Monognomos</th>
-                <th>Empresa/proyecto prin.</th>
-                <th>Proyecto</th>
-                <th>Semana</th>
-                <th>Horas</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="entriesTableBody"></tbody>
-          </table>
+          <button type="button" id="filterBtn" class="btn-secondary filters-button">
+            Filtrar
+          </button>
         </div>
       </section>
 
-      <!-- EXPORTAR EXCEL -->
+      <!-- EXPORTAR -->
       <section class="card">
         <h2>Exportar</h2>
         <button type="button" id="exportBtn" class="btn-primary full-width">
           Exportar a Excel (CSV)
         </button>
-        <p class="hint">Se descargará un archivo CSV compatible con Excel y Google Sheets.</p>
+        <p class="hint">Compatible con Excel y Google Sheets.</p>
       </section>
+
     </div>
 
-    <!-- PESTAÑA: VER TODOS LOS PROYECTOS -->
+    <!-- VISTA: TODOS LOS PROYECTOS -->
     <div id="projectsView" class="hidden">
       <section class="card">
         <h2>Todos los proyectos</h2>
-        <p class="hint">Vista agrupada por empresa y proyecto, con totales y edición/borrado.</p>
+        <p class="hint">Totales agrupados por empresa y proyecto.</p>
 
         <button type="button" id="exportPdfBtn" class="btn-secondary full-width">
-          Exportar a PDF (vista proyectos)
+          Exportar a PDF
         </button>
 
         <div id="companyView" class="company-view"></div>
       </section>
     </div>
 
-    <!-- PESTAÑA: GESTIONAR PROYECTOS POR MESES -->
+    <!-- VISTA: GESTIONAR PROYECTOS -->
     <div id="manageProjectsView" class="hidden">
       <section class="card">
-        <h2>Gestionar proyectos por meses</h2>
-        <p class="hint">
-          Aquí puedes ver en qué meses está cada proyecto y modificar sus meses asociados.
-        </p>
+        <h2>Gestionar proyectos</h2>
+        <p class="hint">Modifica los meses asociados a cada proyecto.</p>
+
         <div id="manageProjectsContainer" class="company-view"></div>
       </section>
     </div>
