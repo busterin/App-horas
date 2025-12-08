@@ -33,6 +33,13 @@ body {
   margin: 0;
 }
 
+/* CONTENEDOR PRINCIPAL */
+.app-main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px 8px 24px;
+}
+
 /* TABS */
 
 .tabs {
@@ -117,6 +124,21 @@ select:focus {
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
 }
 
+/* FOTO DEL TRABAJADOR (FORMULARIO) */
+
+.worker-photo-wrapper {
+  margin-bottom: 8px;
+  display: none; /* se activa por JS cuando hay trabajador seleccionado */
+}
+
+.worker-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+}
+
 /* BOTONES */
 
 .btn-primary,
@@ -156,11 +178,42 @@ select:focus {
   color: #b91c1c;
 }
 
-.hidden {
-  display: none;
+.full-width {
+  width: 100%;
+  margin-top: 4px;
 }
 
-/* TABLA PRINCIPAL (RESUMEN RÁPIDO) */
+/* MENSAJES */
+
+.message {
+  min-height: 20px;
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
+.message.ok {
+  color: #059669;
+}
+
+.message.error {
+  color: #b91c1c;
+}
+
+/* FILTROS */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+.filters .field.small {
+  flex: 1 1 30%;
+}
+
+/* TABLAS */
 
 .table-wrapper {
   overflow-x: auto;
@@ -184,9 +237,39 @@ th {
   color: #4b5563;
 }
 
+/* CELDA DE TRABAJADOR CON FOTO */
+
+.worker-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.worker-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+}
+
+/* TEXTOS PEQUEÑOS */
+
+.hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* PARA OCULTAR VISTAS O CAMPOS */
+
+.hidden {
+  display: none;
+}
+
 /* ============================= */
-/*   ESTILOS PARA TODOS LOS
-      PROYECTOS (Pestaña 2)
+/*   ESTILOS PARA "TODOS LOS
+      PROYECTOS" (Pestaña 2)
    ============================= */
 
 .company-view {
