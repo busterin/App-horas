@@ -393,24 +393,49 @@ function handleAddProject() {
 }
 
 // construir índice: empresa → proyecto → [meses]
+// Soporta formato nuevo (por meses) y antiguo (array plano)
 function buildProjectMonthIndex() {
   const map = loadProjectsByCompany();
   const index = {};
 
   Object.keys(map).forEach(company => {
-    const companyMap = map[company] || {};
+    const companyRaw = map[company];
     const projIndex = {};
-    Object.keys(companyMap).forEach(monthKey => {
-      const list = companyMap[monthKey] || [];
-      list.forEach(projectName => {
+
+    if (Array.isArray(companyRaw)) {
+      // FORMATO ANTIGUO: ["Proyecto 1", "Proyecto 2", ...]
+      const legacyMonth = "0000-00"; // marcador para proyectos sin mes
+      companyRaw.forEach(projectName => {
         if (!projIndex[projectName]) {
           projIndex[projectName] = [];
         }
-        if (!projIndex[projectName].includes(monthKey)) {
-          projIndex[projectName].push(monthKey);
+        if (!projIndex[projectName].includes(legacyMonth)) {
+          projIndex[projectName].push(legacyMonth);
         }
       });
-    });
+    } else if (companyRaw && typeof companyRaw === "object") {
+      // FORMATO NUEVO: { "YYYY-MM": ["Proyecto 1", "Proyecto 2"] }
+      Object.keys(companyRaw).forEach(monthKey => {
+        let list = companyRaw[monthKey];
+
+        // por si acaso algún mes es un string suelto
+        if (typeof list === "string") {
+          list = [list];
+        }
+
+        if (!Array.isArray(list)) return;
+
+        list.forEach(projectName => {
+          if (!projIndex[projectName]) {
+            projIndex[projectName] = [];
+          }
+          if (!projIndex[projectName].includes(monthKey)) {
+            projIndex[projectName].push(monthKey);
+          }
+        });
+      });
+    }
+
     index[company] = projIndex;
   });
 
@@ -782,7 +807,6 @@ function renderCompanyView() {
       tdLabel.textContent = "Total proyecto";
       const tdTotal = document.createElement("td");
       tdTotal.textContent = projectTotal.toString().replace(".", ",");
-
       trTotal.appendChild(tdLabel);
       trTotal.appendChild(tdTotal);
       tbody.appendChild(trTotal);
