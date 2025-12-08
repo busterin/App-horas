@@ -418,7 +418,6 @@ function buildProjectMonthIndex() {
       Object.keys(companyRaw).forEach(monthKey => {
         let list = companyRaw[monthKey];
 
-        // por si acaso algún mes es un string suelto
         if (typeof list === "string") {
           list = [list];
         }
@@ -959,7 +958,7 @@ function handleFilter() {
 }
 
 // =====================================
-//   Exportar CSV
+//   Exportar CSV (agrupado como "Ver todos los proyectos")
 // =====================================
 
 function exportToCSV() {
@@ -969,24 +968,66 @@ function exportToCSV() {
     return;
   }
 
-  const header = ["Trabajador", "Empresa", "Proyecto", "Semana", "Horas"];
+  // Agrupamos igual que en "Ver todos los proyectos"
+  const grouped = {};
+  entries.forEach(e => {
+    if (!grouped[e.company]) grouped[e.company] = {};
+    if (!grouped[e.company][e.project]) grouped[e.company][e.project] = [];
+    grouped[e.company][e.project].push(e);
+  });
 
-  const rows = entries.map(e => [
-    e.worker,
-    e.company,
-    e.project,
-    e.week,
-    e.hours
-  ]);
+  const companies = Object.keys(grouped).sort((a, b) =>
+    a.localeCompare(b, "es")
+  );
 
-  const csvLines = [header.join(";"), ...rows.map(r => r.join(";"))];
-  const csvContent = csvLines.join("\n");
+  const lines = [];
+  let globalTotal = 0;
+
+  companies.forEach(company => {
+    lines.push(`Empresa: ${company}`);
+    let companyTotal = 0;
+
+    const projects = Object.keys(grouped[company]).sort((a, b) =>
+      a.localeCompare(b, "es")
+    );
+
+    projects.forEach(project => {
+      lines.push(`Proyecto: ${project}`);
+      lines.push("Trabajador;Semana;Horas");
+
+      let projectTotal = 0;
+
+      grouped[company][project].forEach(e => {
+        const hours = e.hours ?? 0;
+        projectTotal += Number(hours) || 0;
+        const hoursStr = String(hours).replace(".", ",");
+        lines.push(`${e.worker};${e.week};${hoursStr}`);
+      });
+
+      const projectTotalStr = String(projectTotal).replace(".", ",");
+      lines.push(`Total proyecto;;${projectTotalStr}`);
+      lines.push(""); // línea en blanco entre proyectos
+
+      companyTotal += projectTotal;
+    });
+
+    const companyTotalStr = String(companyTotal).replace(".", ",");
+    lines.push(`Total empresa;;${companyTotalStr}`);
+    lines.push(""); // línea en blanco entre empresas
+
+    globalTotal += companyTotal;
+  });
+
+  const globalTotalStr = String(globalTotal).replace(".", ",");
+  lines.push(`Total general;;${globalTotalStr}`);
+
+  const csvContent = lines.join("\n");
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "horas_empresa.csv";
+  a.download = "horas_empresa_agrupadas.csv";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
