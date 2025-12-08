@@ -1196,7 +1196,7 @@ function init() {
   const weekInput = document.getElementById("weekInput");
   const filterWeek = document.getElementById("filterWeek");
 
-  fillSelect(workerSelect, workers, { placeholder: "Elige un trabajador" });
+  fillSelect(workerSelect, workers, { placeholder: "Elige tu monognomo" });
 
   // empresas (principal y filtro)
   refreshCompanySelects();
