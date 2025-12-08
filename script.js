@@ -4,11 +4,20 @@
 const STORAGE_KEYS = {
   PROJECTS_BY_COMPANY: "appHoras_proyectosPorEmpresa", // ahora incluye meses
   ENTRIES: "appHoras_registros",
-  WORKERS: "appHoras_trabajadores"
+  WORKERS: "appHoras_trabajadores",
+  COMPANIES: "appHoras_empresas"
 };
 
-// Empresas disponibles
-const COMPANIES = ["Monognomo", "Neozink", "Yurmuvi", "General"];
+// Empresas disponibles (por defecto)
+const DEFAULT_COMPANIES = [
+  "Monognomo",
+  "Neozink",
+  "Yurmuvi",
+  "Picofino",
+  "Guardianes",
+  "Escuela Energía",
+  "General"
+];
 
 // Trabajadores (sin iconos, solo nombre)
 const DEFAULT_WORKERS = [
@@ -37,6 +46,9 @@ const DEFAULT_PROJECTS_BY_COMPANY = {
   Monognomo: {},
   Neozink: {},
   Yurmuvi: {},
+  Picofino: {},
+  Guardianes: {},
+  "Escuela Energía": {},
   General: {} // General no usa proyectos, se guarda como "General"
 };
 
@@ -87,6 +99,14 @@ function loadWorkers() {
 
 function saveWorkers(workers) {
   saveToStorage(STORAGE_KEYS.WORKERS, workers);
+}
+
+function loadCompanies() {
+  return loadFromStorage(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
+}
+
+function saveCompanies(companies) {
+  saveToStorage(STORAGE_KEYS.COMPANIES, companies);
 }
 
 function loadEntries() {
@@ -285,6 +305,87 @@ function updateProjectMonthLabel() {
 //   Cambio de empresa/semana: proyectos
 // =====================================
 
+// refresca los desplegables de empresa (principal y filtro)
+function refreshCompanySelects(selectedCompany) {
+  const companies = loadCompanies();
+  const companySelect = document.getElementById("companySelect");
+  const filterCompany = document.getElementById("filterCompany");
+
+  if (companySelect) {
+    fillSelect(companySelect, companies, {
+      placeholder: "Elige una empresa/proyecto prin."
+    });
+
+    // opción especial para añadir empresa nueva
+    const addOpt = document.createElement("option");
+    addOpt.value = "__new_company__";
+    addOpt.textContent = "➕ Añadir empresa nueva...";
+    companySelect.appendChild(addOpt);
+
+    if (selectedCompany) {
+      companySelect.value = selectedCompany;
+    }
+  }
+
+  if (filterCompany) {
+    filterCompany.innerHTML = "";
+    const allCompaniesOpt = document.createElement("option");
+    allCompaniesOpt.value = "";
+    allCompaniesOpt.textContent = "Todas";
+    filterCompany.appendChild(allCompaniesOpt);
+
+    companies.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c;
+      filterCompany.appendChild(opt);
+    });
+  }
+}
+
+// cuando cambia la empresa en el formulario principal
+function handleCompanyChange() {
+  const companySelect = document.getElementById("companySelect");
+  if (!companySelect) return;
+
+  const value = companySelect.value;
+
+  if (value === "__new_company__") {
+    const name = prompt("Nombre de la nueva empresa/proyecto principal:");
+    if (!name) {
+      companySelect.value = "";
+      updateProjectSelect();
+      return;
+    }
+
+    const trimmed = name.trim();
+    if (!trimmed) {
+      companySelect.value = "";
+      updateProjectSelect();
+      return;
+    }
+
+    let companies = loadCompanies();
+    if (!companies.includes(trimmed)) {
+      companies.push(trimmed);
+      // guardamos lista actualizada
+      saveCompanies(companies);
+    }
+
+    // nos aseguramos de que exista la entrada en projectsByCompany
+    const projectsByCompany = loadProjectsByCompany();
+    if (!projectsByCompany[trimmed]) {
+      projectsByCompany[trimmed] = {};
+      saveProjectsByCompany(projectsByCompany);
+    }
+
+    // refrescamos selects y dejamos seleccionada la nueva empresa
+    refreshCompanySelects(trimmed);
+  }
+
+  updateProjectSelect();
+}
+
 function updateProjectSelect() {
   const companySelect = document.getElementById("companySelect");
   const projectSelect = document.getElementById("projectSelect");
@@ -297,7 +398,7 @@ function updateProjectSelect() {
 
   updateProjectMonthLabel();
 
-  if (!company || company === "General") {
+  if (!company || company === "General" || company === "__new_company__") {
     projectWrapper.classList.add("hidden");
     projectSelect.disabled = true;
     projectSelect.innerHTML = "";
@@ -1084,6 +1185,7 @@ function switchToManageProjectsView() {
 
 function init() {
   const workers = loadWorkers();
+  loadCompanies(); // nos aseguramos de que hay algo en storage
   loadProjectsByCompany();
 
   const workerSelect = document.getElementById("workerSelect");
@@ -1095,11 +1197,14 @@ function init() {
   const filterWeek = document.getElementById("filterWeek");
 
   fillSelect(workerSelect, workers, { placeholder: "Elige un trabajador" });
-  fillSelect(companySelect, COMPANIES, { placeholder: "Elige una empresa" });
+
+  // empresas (principal y filtro)
+  refreshCompanySelects();
 
   projectSelect.innerHTML = "";
   projectSelect.disabled = true;
 
+  // filtro de trabajadores
   filterWorker.innerHTML = "";
   const allWorkersOpt = document.createElement("option");
   allWorkersOpt.value = "";
@@ -1112,22 +1217,10 @@ function init() {
     filterWorker.appendChild(opt);
   });
 
-  filterCompany.innerHTML = "";
-  const allCompaniesOpt = document.createElement("option");
-  allCompaniesOpt.value = "";
-  allCompaniesOpt.textContent = "Todas";
-  filterCompany.appendChild(allCompaniesOpt);
-  COMPANIES.forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    filterCompany.appendChild(opt);
-  });
-
   weekInput.value = "";
   filterWeek.value = "";
 
-  companySelect.addEventListener("change", updateProjectSelect);
+  companySelect.addEventListener("change", handleCompanyChange);
   weekInput.addEventListener("change", updateProjectSelect);
   document.getElementById("addProjectBtn").addEventListener("click", handleAddProject);
   document.getElementById("saveBtn").addEventListener("click", handleSaveHours);
