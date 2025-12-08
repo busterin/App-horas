@@ -30,16 +30,24 @@
       <section class="card">
         <h2>Introducir horas</h2>
 
+        <!-- Trabajador -->
         <label class="field">
           <span>Trabajador</span>
           <select id="workerSelect"></select>
         </label>
 
+        <!-- Foto del trabajador -->
+        <div class="worker-photo-wrapper">
+          <img id="workerPhoto" class="worker-photo" alt="Foto del trabajador seleccionado" />
+        </div>
+
+        <!-- Empresa -->
         <label class="field">
           <span>Empresa</span>
           <select id="companySelect"></select>
         </label>
 
+        <!-- Proyecto -->
         <label class="field" id="projectFieldWrapper">
           <span>Proyecto</span>
           <div class="inline-field">
@@ -48,11 +56,13 @@
           </div>
         </label>
 
+        <!-- Semana -->
         <label class="field">
           <span>Semana</span>
           <input type="week" id="weekInput" />
         </label>
 
+        <!-- Horas -->
         <label class="field">
           <span>Horas trabajadas</span>
           <input type="number" id="hoursInput" min="0" step="0.25" inputmode="decimal" />
@@ -65,6 +75,7 @@
         <p id="message" class="message" aria-live="polite"></p>
       </section>
 
+      <!-- RESUMEN RÁPIDO -->
       <section class="card">
         <h2>Resumen rápido</h2>
 
@@ -104,6 +115,7 @@
         </div>
       </section>
 
+      <!-- EXPORTAR -->
       <section class="card">
         <h2>Exportar</h2>
         <button type="button" id="exportBtn" class="btn-primary full-width">
