@@ -1035,6 +1035,17 @@ function exportToCSV() {
 }
 
 // =====================================
+//   Exportar PDF de "Ver todos los proyectos"
+// =====================================
+
+function exportProjectsPDF() {
+  // Aseguramos que la vista de proyectos está activa y actualizada
+  switchToProjectsView();
+  // El @media print en CSS ya se encarga de mostrar solo esta sección
+  window.print();
+}
+
+// =====================================
 //   Tabs
 // =====================================
 
@@ -1122,6 +1133,11 @@ function init() {
   document.getElementById("saveBtn").addEventListener("click", handleSaveHours);
   document.getElementById("filterBtn").addEventListener("click", handleFilter);
   document.getElementById("exportBtn").addEventListener("click", exportToCSV);
+
+  const pdfBtn = document.getElementById("exportPdfBtn");
+  if (pdfBtn) {
+    pdfBtn.addEventListener("click", exportProjectsPDF);
+  }
 
   document.getElementById("tabMain").addEventListener("click", switchToMainView);
   document.getElementById("tabProjects").addEventListener("click", switchToProjectsView);
