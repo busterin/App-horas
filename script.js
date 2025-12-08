@@ -149,7 +149,7 @@ function showMessage(text, type = "ok") {
 }
 
 // =====================================
-//   Fotos de monognomos
+//   Fotos de trabajadores
 // =====================================
 
 // extensiones que vamos a probar, en orden
@@ -201,7 +201,7 @@ function updateWorkerPhoto() {
   if (!worker) {
     wrapper.style.display = "none";
     img.src = "";
-    img.alt = "Foto del monognomo seleccionado";
+    img.alt = "Foto del trabajador seleccionado";
     return;
   }
 
@@ -855,7 +855,7 @@ function renderCompanyView() {
       const table = document.createElement("table");
       const thead = document.createElement("thead");
       thead.innerHTML =
-        "<tr><th>Monognomo</th><th>Semana</th><th>Horas</th><th>Acciones</th></tr>";
+        "<tr><th>Trabajador</th><th>Semana</th><th>Horas</th><th>Acciones</th></tr>";
       table.appendChild(thead);
 
       const tbody = document.createElement("tbody");
@@ -1094,7 +1094,7 @@ function exportToCSV() {
 
     projects.forEach(project => {
       lines.push(`Proyecto: ${project}`);
-      lines.push("Monognomo;Semana;Horas");
+      lines.push("Trabajador;Semana;Horas");
 
       let projectTotal = 0;
 
@@ -1196,7 +1196,7 @@ function init() {
   const weekInput = document.getElementById("weekInput");
   const filterWeek = document.getElementById("filterWeek");
 
-  fillSelect(workerSelect, workers, { placeholder: "Elige un/a monognomo" });
+  fillSelect(workerSelect, workers, { placeholder: "Elige un trabajador" });
 
   // empresas (principal y filtro)
   refreshCompanySelects();
