@@ -136,7 +136,6 @@ function showMessage(text, type = "ok") {
 const WORKER_IMAGE_EXTENSIONS = [".jpeg", ".jpg", ".png"];
 
 // mapa manual: nombre del trabajador → base del fichero (sin extensión)
-// ⚠️ Respeta lo que tú ya tienes en /images
 const WORKER_IMAGE_BASE_MAP = {
   "Elías": "Elias",   // Elias.jpeg
   "Inés": "Ines",     // Ines.jpeg
@@ -145,18 +144,15 @@ const WORKER_IMAGE_BASE_MAP = {
   // el resto usa el nombre tal cual
 };
 
-// devuelve el "base name" del archivo para ese trabajador
 function getWorkerImageBase(workerName) {
   return WORKER_IMAGE_BASE_MAP[workerName] || workerName;
 }
 
-// Construye un array de rutas posibles para un trabajador
 function getPossibleImagePaths(workerName) {
   const base = getWorkerImageBase(workerName);
   return WORKER_IMAGE_EXTENSIONS.map(ext => `images/${base}${ext}`);
 }
 
-// Carga una imagen probando una ruta tras otra
 function loadWorkerImage(imgElement, workerName) {
   const paths = getPossibleImagePaths(workerName);
   let index = 0;
@@ -167,14 +163,13 @@ function loadWorkerImage(imgElement, workerName) {
       return;
     }
     const path = paths[index++];
-    imgElement.onerror = tryNext;   // si falla, prueba la siguiente extensión
-    imgElement.src = path;          // intenta cargar
+    imgElement.onerror = tryNext;
+    imgElement.src = path;
   }
 
   tryNext();
 }
 
-// Actualiza la foto del formulario al elegir trabajador
 function updateWorkerPhoto() {
   const select = document.getElementById("workerSelect");
   const wrapper = document.querySelector(".worker-photo-wrapper");
@@ -195,7 +190,6 @@ function updateWorkerPhoto() {
   img.alt = "Foto de " + worker;
 }
 
-// crea una celda <td> con foto + nombre para las tablas
 function createWorkerCell(workerName) {
   const td = document.createElement("td");
   td.className = "worker-cell";
@@ -216,7 +210,6 @@ function createWorkerCell(workerName) {
 //   Mes a partir de la semana
 // =====================================
 
-// Convierte el valor del input type="week" (YYYY-Www) a "YYYY-MM" (mes aproximado)
 function getMonthKeyFromWeek(weekValue) {
   if (!weekValue) return null;
   const parts = weekValue.split("-W");
@@ -225,25 +218,71 @@ function getMonthKeyFromWeek(weekValue) {
   const week = parseInt(parts[1], 10);
   if (isNaN(year) || isNaN(week)) return null;
 
-  // aproximación: primer día del año + (week-1)*7 días
   const d = new Date(year, 0, 1 + (week - 1) * 7);
-  const month = d.getMonth() + 1; // 0-11 -> 1-12
+  const month = d.getMonth() + 1;
   const mm = String(month).padStart(2, "0");
-  return `${year}-${mm}`; // ej: "2025-03"
+  return `${year}-${mm}`; // "YYYY-MM"
 }
 
-// Devuelve proyectos para una empresa y un mes concreto
+const MONTH_NAMES_ES = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre"
+];
+
+function formatMonthKey(monthKey) {
+  if (!monthKey) return "";
+  const [year, monthStr] = monthKey.split("-");
+  const month = parseInt(monthStr, 10);
+  if (!month || month < 1 || month > 12) return monthKey;
+  return `${MONTH_NAMES_ES[month - 1]} ${year}`;
+}
+
+// proyectos para empresa+mes
 function getProjectsForCompanyAndMonth(company, monthKey) {
   if (!company || !monthKey) return [];
   const map = loadProjectsByCompany();
   const companyData = map[company] || {};
   const list = companyData[monthKey] || [];
-  // clon para no modificar el original
   return [...list];
 }
 
+// etiqueta de mes del selector de proyectos
+function updateProjectMonthLabel() {
+  const labelEl = document.getElementById("projectMonthLabel");
+  const companySelect = document.getElementById("companySelect");
+  const weekInput = document.getElementById("weekInput");
+  if (!labelEl || !companySelect || !weekInput) return;
+
+  const company = companySelect.value;
+  const week = weekInput.value;
+  const monthKey = getMonthKeyFromWeek(week);
+
+  if (!week || !monthKey) {
+    labelEl.textContent = "Selecciona una semana para cargar los proyectos del mes.";
+    return;
+  }
+
+  if (!company || company === "General") {
+    labelEl.textContent =
+      "Selecciona empresa para ver los proyectos de " + formatMonthKey(monthKey) + ".";
+    return;
+  }
+
+  labelEl.textContent = "Proyectos de " + formatMonthKey(monthKey);
+}
+
 // =====================================
-//   Cambio de empresa / semana: proyectos
+//   Cambio de empresa/semana: proyectos
 // =====================================
 
 function updateProjectSelect() {
@@ -256,7 +295,8 @@ function updateProjectSelect() {
   const week = weekInput.value;
   const monthKey = getMonthKeyFromWeek(week);
 
-  // Si no hay empresa o es General, ocultamos proyectos
+  updateProjectMonthLabel();
+
   if (!company || company === "General") {
     projectWrapper.classList.add("hidden");
     projectSelect.disabled = true;
@@ -264,7 +304,6 @@ function updateProjectSelect() {
     return;
   }
 
-  // Si no hay semana, también ocultamos proyectos (hay que escoger semana antes)
   if (!week || !monthKey) {
     projectWrapper.classList.add("hidden");
     projectSelect.disabled = true;
@@ -272,7 +311,6 @@ function updateProjectSelect() {
     return;
   }
 
-  // Empresa normal + mes definido
   projectWrapper.classList.remove("hidden");
   projectSelect.disabled = false;
 
@@ -311,7 +349,6 @@ function handleAddProject() {
   const projectName = name.trim();
   if (!projectName) return;
 
-  // Preguntar por otros meses opcionales (YYYY-MM,YYYY-MM,...)
   const extra = prompt(
     "Indica otros meses (formato YYYY-MM) separados por comas si quieres que también aparezca en ellos.\nEjemplo: 2025-04,2025-05\n\nDéjalo vacío si solo debe aparecer en " +
       monthKey
@@ -325,7 +362,6 @@ function handleAddProject() {
       .map(m => m.trim())
       .filter(m => m)
       .forEach(m => {
-        // validar formato básico YYYY-MM
         if (/^\d{4}-\d{2}$/.test(m) && !monthKeys.includes(m)) {
           monthKeys.push(m);
         }
@@ -349,12 +385,90 @@ function handleAddProject() {
 
   saveProjectsByCompany(projectsByCompany);
 
-  // Recargar select de proyectos para el mes actual
   updateProjectSelect();
   const projectSelect = document.getElementById("projectSelect");
   if (projectSelect && projectSelect.options.length > 0) {
     projectSelect.value = projectName;
   }
+}
+
+// construir índice: empresa → proyecto → [meses]
+function buildProjectMonthIndex() {
+  const map = loadProjectsByCompany();
+  const index = {};
+
+  Object.keys(map).forEach(company => {
+    const companyMap = map[company] || {};
+    const projIndex = {};
+    Object.keys(companyMap).forEach(monthKey => {
+      const list = companyMap[monthKey] || [];
+      list.forEach(projectName => {
+        if (!projIndex[projectName]) {
+          projIndex[projectName] = [];
+        }
+        if (!projIndex[projectName].includes(monthKey)) {
+          projIndex[projectName].push(monthKey);
+        }
+      });
+    });
+    index[company] = projIndex;
+  });
+
+  return index;
+}
+
+// editar meses de un proyecto
+function editProjectMonths(company, projectName, currentMonths) {
+  const currentStr = currentMonths.join(", ");
+  const input = prompt(
+    `Indica los meses (formato YYYY-MM) separados por comas para el proyecto "${projectName}".\nEjemplo: 2025-03,2025-04\n\nDeja vacío para eliminarlo de todos los meses.`,
+    currentStr
+  );
+  if (input === null) return;
+
+  const newMonths = [];
+  if (input.trim() !== "") {
+    input
+      .split(",")
+      .map(m => m.trim())
+      .filter(m => m)
+      .forEach(m => {
+        if (/^\d{4}-\d{2}$/.test(m) && !newMonths.includes(m)) {
+          newMonths.push(m);
+        }
+      });
+  }
+
+  const projectsByCompany = loadProjectsByCompany();
+  if (!projectsByCompany[company]) {
+    projectsByCompany[company] = {};
+  }
+  const companyMap = projectsByCompany[company];
+
+  // quitar el proyecto de todos los meses actuales
+  Object.keys(companyMap).forEach(monthKey => {
+    companyMap[monthKey] = (companyMap[monthKey] || []).filter(
+      p => p !== projectName
+    );
+    if (companyMap[monthKey].length === 0) {
+      delete companyMap[monthKey];
+    }
+  });
+
+  // añadir a los nuevos meses
+  newMonths.forEach(monthKey => {
+    const list = companyMap[monthKey] || [];
+    if (!list.includes(projectName)) {
+      list.push(projectName);
+      list.sort((a, b) => a.localeCompare(b, "es"));
+    }
+    companyMap[monthKey] = list;
+  });
+
+  saveProjectsByCompany(projectsByCompany);
+
+  renderManageProjectsView();
+  updateProjectSelect();
 }
 
 // =====================================
@@ -414,17 +528,17 @@ function deleteProject(company, project) {
     return;
   }
 
-  // Borrar entradas
   let entries = loadEntries();
   entries = entries.filter(e => !(e.company === company && e.project === project));
   saveEntries(entries);
 
-  // Borrar proyecto de todos los meses de esa empresa
   const projectsByCompany = loadProjectsByCompany();
   if (projectsByCompany[company]) {
     const companyMap = projectsByCompany[company];
     Object.keys(companyMap).forEach(monthKey => {
-      companyMap[monthKey] = companyMap[monthKey].filter(p => p !== project);
+      companyMap[monthKey] = (companyMap[monthKey] || []).filter(
+        p => p !== project
+      );
       if (companyMap[monthKey].length === 0) {
         delete companyMap[monthKey];
       }
@@ -434,6 +548,7 @@ function deleteProject(company, project) {
 
   renderTable();
   renderCompanyView();
+  renderManageProjectsView();
 }
 
 // =====================================
@@ -523,7 +638,6 @@ function renderTable(filter = {}) {
     const tr = document.createElement("tr");
     tr.dataset.id = entry.id;
 
-    // Trabajador con foto
     const tdWorker = createWorkerCell(entry.worker);
     tr.appendChild(tdWorker);
 
@@ -627,7 +741,6 @@ function renderCompanyView() {
         const tr = document.createElement("tr");
         tr.dataset.id = entry.id;
 
-        // Trabajador con foto
         const tdWorker = createWorkerCell(entry.worker);
         tr.appendChild(tdWorker);
 
@@ -661,7 +774,6 @@ function renderCompanyView() {
         projectTotal += entry.hours;
       });
 
-      // Fila total proyecto
       const trTotal = document.createElement("tr");
       trTotal.className = "total-row";
 
@@ -678,7 +790,6 @@ function renderCompanyView() {
       table.appendChild(tbody);
       block.appendChild(table);
 
-      // Botón borrar proyecto completo
       const projectActions = document.createElement("div");
       projectActions.className = "project-actions";
       const deleteProjectBtn = document.createElement("button");
@@ -709,6 +820,101 @@ function renderCompanyView() {
   globalTotalEl.textContent =
     "Total general de horas: " + globalTotal.toString().replace(".", ",");
   container.appendChild(globalTotalEl);
+}
+
+// =====================================
+//   Vista "Gestionar proyectos"
+// =====================================
+
+function renderManageProjectsView() {
+  const container = document.getElementById("manageProjectsContainer");
+  container.innerHTML = "";
+
+  const index = buildProjectMonthIndex();
+
+  const companies = Object.keys(index).sort((a, b) =>
+    a.localeCompare(b, "es")
+  );
+
+  let hasAny = false;
+
+  companies.forEach(company => {
+    const projIndex = index[company];
+    const projectNames = Object.keys(projIndex);
+    if (projectNames.length === 0) return;
+
+    hasAny = true;
+
+    const block = document.createElement("div");
+    block.className = "company-block";
+
+    const h3 = document.createElement("h3");
+    h3.textContent = company;
+    block.appendChild(h3);
+
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    thead.innerHTML =
+      "<tr><th>Proyecto</th><th>Meses</th><th>Acciones</th></tr>";
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    projectNames
+      .sort((a, b) => a.localeCompare(b, "es"))
+      .forEach(projectName => {
+        const tr = document.createElement("tr");
+
+        const tdProject = document.createElement("td");
+        tdProject.textContent = projectName;
+        tr.appendChild(tdProject);
+
+        const tdMonths = document.createElement("td");
+        const months = projIndex[projectName] || [];
+        const pretty = months
+          .slice()
+          .sort()
+          .map(m => formatMonthKey(m))
+          .join(", ");
+        tdMonths.textContent = pretty || "—";
+        tr.appendChild(tdMonths);
+
+        const tdActions = document.createElement("td");
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "icon-btn edit";
+        editBtn.textContent = "✏️ Meses";
+        editBtn.title = "Editar meses del proyecto";
+        editBtn.addEventListener("click", () =>
+          editProjectMonths(company, projectName, months)
+        );
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "icon-btn delete";
+        deleteBtn.textContent = "🗑️ Borrar";
+        deleteBtn.title = "Borrar proyecto de todos los meses";
+        deleteBtn.addEventListener("click", () =>
+          deleteProject(company, projectName)
+        );
+
+        tdActions.appendChild(editBtn);
+        tdActions.appendChild(deleteBtn);
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+      });
+
+    table.appendChild(tbody);
+    block.appendChild(table);
+
+    container.appendChild(block);
+  });
+
+  if (!hasAny) {
+    const p = document.createElement("p");
+    p.textContent = "No hay proyectos definidos todavía.";
+    container.appendChild(p);
+  }
 }
 
 // =====================================
@@ -770,16 +976,30 @@ function exportToCSV() {
 function switchToMainView() {
   document.getElementById("mainView").classList.remove("hidden");
   document.getElementById("projectsView").classList.add("hidden");
+  document.getElementById("manageProjectsView").classList.add("hidden");
   document.getElementById("tabMain").classList.add("active");
   document.getElementById("tabProjects").classList.remove("active");
+  document.getElementById("tabManageProjects").classList.remove("active");
 }
 
 function switchToProjectsView() {
   document.getElementById("mainView").classList.add("hidden");
   document.getElementById("projectsView").classList.remove("hidden");
+  document.getElementById("manageProjectsView").classList.add("hidden");
   document.getElementById("tabMain").classList.remove("active");
   document.getElementById("tabProjects").classList.add("active");
+  document.getElementById("tabManageProjects").classList.remove("active");
   renderCompanyView();
+}
+
+function switchToManageProjectsView() {
+  document.getElementById("mainView").classList.add("hidden");
+  document.getElementById("projectsView").classList.add("hidden");
+  document.getElementById("manageProjectsView").classList.remove("hidden");
+  document.getElementById("tabMain").classList.remove("active");
+  document.getElementById("tabProjects").classList.remove("active");
+  document.getElementById("tabManageProjects").classList.add("active");
+  renderManageProjectsView();
 }
 
 // =====================================
@@ -788,7 +1008,7 @@ function switchToProjectsView() {
 
 function init() {
   const workers = loadWorkers();
-  loadProjectsByCompany(); // inicializar por si acaso
+  loadProjectsByCompany();
 
   const workerSelect = document.getElementById("workerSelect");
   const companySelect = document.getElementById("companySelect");
@@ -798,17 +1018,12 @@ function init() {
   const weekInput = document.getElementById("weekInput");
   const filterWeek = document.getElementById("filterWeek");
 
-  // Trabajadores
   fillSelect(workerSelect, workers, { placeholder: "Elige un trabajador" });
-
-  // Empresas
   fillSelect(companySelect, COMPANIES, { placeholder: "Elige una empresa" });
 
-  // Proyectos: se rellenan en función de empresa + semana
   projectSelect.innerHTML = "";
   projectSelect.disabled = true;
 
-  // Filtro trabajadores
   filterWorker.innerHTML = "";
   const allWorkersOpt = document.createElement("option");
   allWorkersOpt.value = "";
@@ -821,7 +1036,6 @@ function init() {
     filterWorker.appendChild(opt);
   });
 
-  // Filtro empresas
   filterCompany.innerHTML = "";
   const allCompaniesOpt = document.createElement("option");
   allCompaniesOpt.value = "";
@@ -837,7 +1051,6 @@ function init() {
   weekInput.value = "";
   filterWeek.value = "";
 
-  // Eventos
   companySelect.addEventListener("change", updateProjectSelect);
   weekInput.addEventListener("change", updateProjectSelect);
   document.getElementById("addProjectBtn").addEventListener("click", handleAddProject);
@@ -847,10 +1060,13 @@ function init() {
 
   document.getElementById("tabMain").addEventListener("click", switchToMainView);
   document.getElementById("tabProjects").addEventListener("click", switchToProjectsView);
+  document
+    .getElementById("tabManageProjects")
+    .addEventListener("click", switchToManageProjectsView);
 
-  // foto de trabajador en el formulario
   workerSelect.addEventListener("change", updateWorkerPhoto);
-  updateWorkerPhoto(); // estado inicial
+  updateWorkerPhoto();
+  updateProjectMonthLabel();
 
   renderTable();
 }
