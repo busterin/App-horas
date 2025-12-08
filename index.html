@@ -21,8 +21,14 @@
         <select id="workerSelect"></select>
       </label>
 
-      <!-- Selección de proyecto -->
+      <!-- Selección de empresa -->
       <label class="field">
+        <span>Empresa</span>
+        <select id="companySelect"></select>
+      </label>
+
+      <!-- Selección de proyecto (depende de la empresa) -->
+      <label class="field" id="projectFieldWrapper">
         <span>Proyecto</span>
         <div class="inline-field">
           <select id="projectSelect"></select>
@@ -59,6 +65,11 @@
         </label>
 
         <label class="field small">
+          <span>Empresa</span>
+          <select id="filterCompany"></select>
+        </label>
+
+        <label class="field small">
           <span>Semana</span>
           <input type="week" id="filterWeek" />
         </label>
@@ -73,6 +84,7 @@
           <thead>
             <tr>
               <th>Trabajador</th>
+              <th>Empresa</th>
               <th>Proyecto</th>
               <th>Semana</th>
               <th>Horas</th>
