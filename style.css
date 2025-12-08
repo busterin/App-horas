@@ -139,6 +139,14 @@ select:focus {
   border: 2px solid #e5e7eb;
 }
 
+/* ETIQUETA DEL MES PARA PROYECTOS */
+
+.project-month-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
 /* BOTONES */
 
 .btn-primary,
@@ -269,7 +277,7 @@ th {
 
 /* ============================= */
 /*   ESTILOS PARA "TODOS LOS
-      PROYECTOS" (Pestaña 2)
+      PROYECTOS" y "GESTIONAR"
    ============================= */
 
 .company-view {
@@ -336,7 +344,7 @@ th {
   background: #f9fafb;
 }
 
-/* total por proyecto */
+/* total por proyecto (en pestaña "ver todos los proyectos") */
 .total-row td {
   font-weight: 600;
   border-top: 2px solid #9ca3af;
