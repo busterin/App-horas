@@ -237,7 +237,7 @@ function createWorkerCell(workerName) {
 }
 
 // =====================================
-//   Mes a partir de la semana
+//   Semana → mes y primer día
 // =====================================
 
 function getMonthKeyFromWeek(weekValue) {
@@ -252,6 +252,34 @@ function getMonthKeyFromWeek(weekValue) {
   const month = d.getMonth() + 1;
   const mm = String(month).padStart(2, "0");
   return `${year}-${mm}`; // "YYYY-MM"
+}
+
+// NUEVO: obtener Date del primer día (lunes) de esa semana
+function getFirstDayDateFromWeek(weekValue) {
+  if (!weekValue) return null;
+  const parts = weekValue.split("-W");
+  if (parts.length !== 2) return null;
+  const year = parseInt(parts[0], 10);
+  const week = parseInt(parts[1], 10);
+  if (isNaN(year) || isNaN(week)) return null;
+
+  // aproximación a la semana ISO a partir del 1 de enero
+  const d = new Date(year, 0, 1 + (week - 1) * 7);
+  const day = d.getDay(); // 0 = domingo, 1 = lunes, ...
+  const diff = day === 0 ? -6 : 1 - day; // llevamos al lunes
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+// NUEVO: formato "dd-mm-yy"
+function formatWeekDisplay(weekValue) {
+  const d = getFirstDayDateFromWeek(weekValue);
+  if (!d) return weekValue;
+
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${dd}-${mm}-${yy}`;
 }
 
 const MONTH_NAMES_ES = [
@@ -693,7 +721,6 @@ function updateEntryHours(id, newHours) {
   entry.hours = newHours;
   saveEntries(entries);
 
-  // re-render con último filtro aplicado? usamos sin filtro (tabla ya va por filtros)
   renderTable();
   if (!document.getElementById("projectsView").classList.contains("hidden")) {
     renderCompanyView(); // usa mes actual por defecto
@@ -900,7 +927,8 @@ function renderTable(filter = {}) {
     tr.appendChild(tdProject);
 
     const tdWeek = document.createElement("td");
-    tdWeek.textContent = entry.week;
+    // CAMBIO: mostramos primer día de la semana
+    tdWeek.textContent = formatWeekDisplay(entry.week);
     tr.appendChild(tdWeek);
 
     const tdHours = document.createElement("td");
@@ -1014,7 +1042,8 @@ function renderCompanyView(filter = {}) {
         tr.appendChild(tdWorker);
 
         const tdWeek = document.createElement("td");
-        tdWeek.textContent = entry.week;
+        // CAMBIO: mostramos primer día de la semana
+        tdWeek.textContent = formatWeekDisplay(entry.week);
         tr.appendChild(tdWeek);
 
         const tdHours = document.createElement("td");
@@ -1092,7 +1121,7 @@ function renderCompanyView(filter = {}) {
 
 // =====================================
 //   Vista "Gestionar proyectos"
-//   (ahora también muestra monognomos asignados)
+//   (muestra monognomos asignados)
 // =====================================
 
 function renderManageProjectsView() {
@@ -1304,6 +1333,8 @@ function exportToCSV() {
     const hours = e.hours ?? 0;
     const hoursStr = String(hours).replace(".", ","); // coma decimal
 
+    // En el CSV dejamos el valor tal cual (2025-W50),
+    // si quisieras también podría cambiarse a formatWeekDisplay(e.week)
     lines.push(
       `${e.company};${e.project};${e.worker};${e.week};${hoursStr}`
     );
