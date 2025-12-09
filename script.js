@@ -742,8 +742,26 @@ function renderTable(filter = {}) {
   // salimos sin hacer nada para evitar errores.
   if (!tbody) return;
 
+  const hasFilter =
+    (filter.worker && filter.worker !== "") ||
+    (filter.company && filter.company !== "") ||
+    (filter.week && filter.week !== "");
+
   const entries = loadEntries();
 
+  // Si NO hay filtros: mostramos solo un mensaje y no listamos registros
+  if (!hasFilter) {
+    tbody.innerHTML = "";
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 6;
+    td.textContent = "Usa los filtros para mostrar resultados.";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  // Si hay filtros: filtramos normalmente
   const filtered = entries.filter(e => {
     if (filter.worker && e.worker !== filter.worker) return false;
     if (filter.company && e.company !== filter.company) return false;
@@ -757,7 +775,7 @@ function renderTable(filter = {}) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
     td.colSpan = 6;
-    td.textContent = "No hay registros.";
+    td.textContent = "No hay registros con ese filtro.";
     tr.appendChild(td);
     tbody.appendChild(tr);
     return;
@@ -1243,6 +1261,7 @@ function init() {
   updateWorkerPhoto();
   updateProjectMonthLabel();
 
+  // Al iniciar, la tabla muestra solo el mensaje de "Usa los filtros..."
   renderTable();
 }
 
