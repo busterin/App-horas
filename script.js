@@ -15,8 +15,8 @@ const DEFAULT_COMPANIES = [
   "Neozink",
   "Yurmuvi",
   "Picofino",
-  "Guardianes del Tesoro",
-  "Escuela de la Energía",
+  "Guardianes",
+  "Escuela Energía",
   "General"
 ];
 
@@ -50,7 +50,7 @@ const DEFAULT_PROJECTS_BY_COMPANY = {
   Picofino: {},
   Guardianes: {},
   "Escuela Energía": {},
-  General: {} // General no usa proyectos, se guarda como "General"
+  General: {}
 };
 
 // =====================================
@@ -248,7 +248,7 @@ function getMonthKeyFromWeek(weekValue) {
   const d = new Date(year, 0, 1 + (week - 1) * 7);
   const month = d.getMonth() + 1;
   const mm = String(month).padStart(2, "0");
-  return `${year}-${mm}`; // "YYYY-MM"
+  return `${year}-${mm}`;
 }
 
 // primer día (lunes) de la semana
@@ -261,7 +261,7 @@ function getFirstDayDateFromWeek(weekValue) {
   if (isNaN(year) || isNaN(week)) return null;
 
   const d = new Date(year, 0, 1 + (week - 1) * 7);
-  const day = d.getDay(); // 0 = domingo, 1 = lunes, ...
+  const day = d.getDay(); // 0 = domingo, 1 = lunes
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   return d;
@@ -279,18 +279,8 @@ function formatWeekDisplay(weekValue) {
 }
 
 const MONTH_NAMES_ES = [
-  "enero",
-  "febrero",
-  "marzo",
-  "abril",
-  "mayo",
-  "junio",
-  "julio",
-  "agosto",
-  "septiembre",
-  "octubre",
-  "noviembre",
-  "diciembre"
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
 ];
 
 function formatMonthKey(monthKey) {
@@ -621,7 +611,7 @@ function editProjectMonths(company, projectName, currentMonths) {
     `Nuevo nombre para el proyecto en "${company}" (deja como está para mantenerlo):`,
     projectName
   );
-  if (nameInput === null) return; // cancelar
+  if (nameInput === null) return;
   const newProjectName = nameInput.trim() || projectName;
 
   // 2) Meses
@@ -651,7 +641,7 @@ function editProjectMonths(company, projectName, currentMonths) {
   }
   const companyMap = projectsByCompany[company];
 
-  // quitar nombre antiguo (y posible nombre nuevo) de todos los meses
+  // quitar nombre antiguo (y posible nuevo) de todos los meses
   Object.keys(companyMap).forEach(monthKey => {
     companyMap[monthKey] = (companyMap[monthKey] || []).filter(
       p => p !== projectName && p !== newProjectName
@@ -673,7 +663,7 @@ function editProjectMonths(company, projectName, currentMonths) {
 
   saveProjectsByCompany(projectsByCompany);
 
-  // 3) Renombrar entradas de horas si ha cambiado el nombre
+  // 3) Renombrar entradas de horas
   if (newProjectName !== projectName) {
     let entries = loadEntries();
     let modified = false;
@@ -702,7 +692,6 @@ function editProjectMonths(company, projectName, currentMonths) {
     delete projectWorkers[company][projectName];
   }
 
-  // limpieza si no hay meses ni monognomos
   if (
     newMonths.length === 0 &&
     (!projectWorkers[company][newProjectName] ||
@@ -870,12 +859,9 @@ function handleSaveHours() {
 }
 
 // =====================================
-//   Tabla de "resumen rápido" (listado) SIEMPRE OCULTA
+//   Tabla de "resumen rápido" (siempre oculta)
 // =====================================
 
-// Ahora, esta función NUNCA muestra registros reales.
-// Solo deja un mensaje informativo para que el listado
-// permanezca siempre oculto, tanto con filtros como sin ellos.
 function renderTable(filter = {}) {
   const tbody = document.getElementById("entriesTableBody");
   if (!tbody) return;
@@ -884,15 +870,14 @@ function renderTable(filter = {}) {
   const tr = document.createElement("tr");
   const td = document.createElement("td");
   td.colSpan = 6;
-  td.textContent = "Los registros detallados se consultan en la vista agrupada de abajo.";
+  td.textContent =
+    "Los registros detallados se consultan en la vista agrupada de abajo.";
   tr.appendChild(td);
   tbody.appendChild(tr);
 }
 
 // =====================================
 //   Vista "Todos los proyectos" (agrupada)
-//   → Por defecto: solo mes actual
-//   → Con filtro: respeta filtro (mes, monognomo, empresa, proyecto)
 // =====================================
 
 function renderCompanyView(filter = {}) {
@@ -1018,17 +1003,7 @@ function renderCompanyView(filter = {}) {
       table.appendChild(tbody);
       block.appendChild(table);
 
-      const projectActions = document.createElement("div");
-      projectActions.className = "project-actions";
-      const deleteProjectBtn = document.createElement("button");
-      deleteProjectBtn.className = "icon-btn delete";
-      deleteProjectBtn.textContent = "🗑️ Borrar proyecto completo";
-      deleteProjectBtn.addEventListener("click", () =>
-        deleteProject(company, project)
-      );
-      projectActions.appendChild(deleteProjectBtn);
-      block.appendChild(projectActions);
-
+      // OJO: aquí ya NO aparece "Borrar proyecto completo"
       companyTotal += projectTotal;
     });
 
@@ -1223,9 +1198,7 @@ function handleFilter() {
   if (month) filter.month = month;
   if (project) filter.project = project;
 
-  // El listado detallado permanece oculto siempre
-  renderTable();
-  // La vista agrupada sí se filtra
+  renderTable();           // listado siempre en modo mensaje
   renderCompanyView(filter);
 }
 
@@ -1259,7 +1232,6 @@ function exportToCSV() {
   sorted.forEach(e => {
     const hours = e.hours ?? 0;
     const hoursStr = String(hours).replace(".", ",");
-    // En CSV dejamos la semana como "2025-W50" (si prefieres dd-mm-yy también aquí, se puede cambiar)
     lines.push(
       `${e.company};${e.project};${e.worker};${e.week};${hoursStr}`
     );
@@ -1328,8 +1300,8 @@ function switchToProjectsView() {
   document.getElementById("tabProjects").classList.add("active");
   document.getElementById("tabManageProjects").classList.remove("active");
 
-  renderTable();          // listado siempre oculto
-  renderCompanyView();    // mes actual por defecto
+  renderTable();
+  renderCompanyView();
 }
 
 function switchToManageProjectsView() {
@@ -1343,10 +1315,50 @@ function switchToManageProjectsView() {
 }
 
 // =====================================
+//   Login
+// =====================================
+
+function handleLogin() {
+  const loginView = document.getElementById("loginView");
+  const protectedContent = document.getElementById("protectedContent");
+  const passwordInput = document.getElementById("passwordInput");
+  const loginMessage = document.getElementById("loginMessage");
+
+  const value = passwordInput.value || "";
+
+  if (value === "Mayurni123!") {
+    loginView.classList.add("hidden");
+    protectedContent.classList.remove("hidden");
+    passwordInput.value = "";
+    loginMessage.textContent = "";
+    loginMessage.classList.remove("error", "ok");
+  } else {
+    loginMessage.textContent = "Contraseña incorrecta.";
+    loginMessage.classList.remove("ok");
+    loginMessage.classList.add("error");
+    passwordInput.value = "";
+    passwordInput.focus();
+  }
+}
+
+// =====================================
 //   Init
 // =====================================
 
 function init() {
+  // --- Login ---
+  const loginBtn = document.getElementById("loginBtn");
+  const passwordInput = document.getElementById("passwordInput");
+  if (loginBtn && passwordInput) {
+    loginBtn.addEventListener("click", handleLogin);
+    passwordInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleLogin();
+      }
+    });
+  }
+
+  // --- App principal ---
   const workers = loadWorkers();
   loadCompanies();
   loadProjectsByCompany();
@@ -1406,7 +1418,7 @@ function init() {
 
   refreshProjectFilterSelect();
 
-  // listado siempre oculto
+  // listado siempre modo mensaje
   renderTable();
 }
 
