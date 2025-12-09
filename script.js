@@ -491,6 +491,9 @@ function handleAddProject() {
   if (projectSelect && projectSelect.options.length > 0) {
     projectSelect.value = projectName;
   }
+
+  // nuevo proyecto → actualizamos filtro de proyectos
+  refreshProjectFilterSelect();
 }
 
 // construir índice: empresa → proyecto → [meses]
@@ -674,6 +677,7 @@ function deleteProject(company, project) {
   renderTable();
   renderCompanyView();
   renderManageProjectsView();
+  refreshProjectFilterSelect();
 }
 
 // =====================================
@@ -730,6 +734,7 @@ function handleSaveHours() {
 
   hoursInput.value = "";
   renderTable();
+  refreshProjectFilterSelect();
 }
 
 // =====================================
@@ -738,14 +743,13 @@ function handleSaveHours() {
 
 function renderTable(filter = {}) {
   const tbody = document.getElementById("entriesTableBody");
-  // Si no existe la tabla (por ejemplo, si se ha quitado en Resumen rápido),
-  // salimos sin hacer nada para evitar errores.
   if (!tbody) return;
 
   const hasFilter =
     (filter.worker && filter.worker !== "") ||
     (filter.company && filter.company !== "") ||
-    (filter.week && filter.week !== "");
+    (filter.month && filter.month !== "") ||
+    (filter.project && filter.project !== "");
 
   const entries = loadEntries();
 
@@ -765,7 +769,11 @@ function renderTable(filter = {}) {
   const filtered = entries.filter(e => {
     if (filter.worker && e.worker !== filter.worker) return false;
     if (filter.company && e.company !== filter.company) return false;
-    if (filter.week && e.week !== filter.week) return false;
+    if (filter.project && e.project !== filter.project) return false;
+    if (filter.month) {
+      const entryMonth = getMonthKeyFromWeek(e.week);
+      if (entryMonth !== filter.month) return false;
+    }
     return true;
   });
 
@@ -1064,18 +1072,72 @@ function renderManageProjectsView() {
 }
 
 // =====================================
+//   Filtro de proyectos (desplegable)
+// =====================================
+
+function refreshProjectFilterSelect() {
+  const filterProject = document.getElementById("filterProject");
+  if (!filterProject) return;
+
+  filterProject.innerHTML = "";
+
+  const allOpt = document.createElement("option");
+  allOpt.value = "";
+  allOpt.textContent = "Todos";
+  filterProject.appendChild(allOpt);
+
+  const projectsSet = new Set();
+
+  // Proyectos que tienen horas registradas
+  const entries = loadEntries();
+  entries.forEach(e => {
+    if (e.project) {
+      projectsSet.add(e.project);
+    }
+  });
+
+  // Proyectos definidos en projectsByCompany
+  const projectsByCompany = loadProjectsByCompany();
+  Object.keys(projectsByCompany).forEach(company => {
+    const companyRaw = projectsByCompany[company];
+    if (Array.isArray(companyRaw)) {
+      companyRaw.forEach(p => projectsSet.add(p));
+    } else if (companyRaw && typeof companyRaw === "object") {
+      Object.values(companyRaw).forEach(list => {
+        if (typeof list === "string") {
+          projectsSet.add(list);
+        } else if (Array.isArray(list)) {
+          list.forEach(p => projectsSet.add(p));
+        }
+      });
+    }
+  });
+
+  Array.from(projectsSet)
+    .sort((a, b) => a.localeCompare(b, "es"))
+    .forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p;
+      opt.textContent = p;
+      filterProject.appendChild(opt);
+    });
+}
+
+// =====================================
 //   Filtros
 // =====================================
 
 function handleFilter() {
   const worker = document.getElementById("filterWorker").value;
   const company = document.getElementById("filterCompany").value;
-  const week = document.getElementById("filterWeek").value;
+  const month = document.getElementById("filterMonth").value;
+  const project = document.getElementById("filterProject").value;
 
   const filter = {};
   if (worker) filter.worker = worker;
   if (company) filter.company = company;
-  if (week) filter.week = week;
+  if (month) filter.month = month;
+  if (project) filter.project = project;
 
   renderTable(filter);
 }
@@ -1213,7 +1275,7 @@ function init() {
   const filterWorker = document.getElementById("filterWorker");
   const filterCompany = document.getElementById("filterCompany");
   const weekInput = document.getElementById("weekInput");
-  const filterWeek = document.getElementById("filterWeek");
+  const filterMonth = document.getElementById("filterMonth");
 
   fillSelect(workerSelect, workers, { placeholder: "Elige tu monognomo" });
 
@@ -1237,7 +1299,7 @@ function init() {
   });
 
   weekInput.value = "";
-  filterWeek.value = "";
+  if (filterMonth) filterMonth.value = "";
 
   companySelect.addEventListener("change", handleCompanyChange);
   weekInput.addEventListener("change", updateProjectSelect);
@@ -1260,6 +1322,9 @@ function init() {
   workerSelect.addEventListener("change", updateWorkerPhoto);
   updateWorkerPhoto();
   updateProjectMonthLabel();
+
+  // rellenamos desplegable de proyectos del filtro
+  refreshProjectFilterSelect();
 
   // Al iniciar, la tabla muestra solo el mensaje de "Usa los filtros..."
   renderTable();
