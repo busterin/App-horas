@@ -104,7 +104,7 @@
           Usa los filtros para ver un resumen rápido y revisar datos en esta vista o en las exportaciones.
         </p>
 
-        <!-- RESUMEN RÁPIDO (MOVIDO AQUÍ) -->
+        <!-- RESUMEN RÁPIDO (FILTROS) -->
         <div class="filters">
           <label class="field small">
             <span>Monognomos</span>
@@ -117,8 +117,13 @@
           </label>
 
           <label class="field small">
-            <span>Semana</span>
-            <input type="week" id="filterWeek" />
+            <span>Mes</span>
+            <input type="month" id="filterMonth" />
+          </label>
+
+          <label class="field small">
+            <span>Proyecto</span>
+            <select id="filterProject"></select>
           </label>
 
           <button type="button" id="filterBtn" class="btn-secondary">Filtrar</button>
