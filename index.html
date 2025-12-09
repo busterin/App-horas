@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Horas de proyecto</title>
+  <title>Registro de horas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -81,10 +81,30 @@
         <p id="message" class="message" aria-live="polite"></p>
       </section>
 
-      <!-- RESUMEN RÁPIDO -->
+      <!-- EXPORTAR -->
       <section class="card">
-        <h2>Resumen rápido</h2>
+        <h2>Exportar</h2>
+        <button type="button" id="exportBtn" class="btn-primary full-width">
+          Exportar a Excel (CSV)
+        </button>
+        <button type="button" id="exportPdfBtn" class="btn-secondary full-width">
+          Exportar a PDF (vista proyectos)
+        </button>
+        <p class="hint">
+          El CSV es compatible con Excel y Google Sheets. El PDF se genera a partir de la vista "Ver todos los proyectos".
+        </p>
+      </section>
+    </div>
 
+    <!-- PESTAÑA: VER TODOS LOS PROYECTOS -->
+    <div id="projectsView" class="hidden">
+      <section class="card">
+        <h2>Todos los proyectos</h2>
+        <p class="hint">
+          Usa los filtros para ver un resumen rápido y revisar datos en esta vista o en las exportaciones.
+        </p>
+
+        <!-- RESUMEN RÁPIDO (MOVIDO AQUÍ) -->
         <div class="filters">
           <label class="field small">
             <span>Monognomos</span>
@@ -104,31 +124,25 @@
           <button type="button" id="filterBtn" class="btn-secondary">Filtrar</button>
         </div>
 
-        <p class="hint">
-          Usa los filtros para revisar datos en las otras vistas o exportaciones.
-        </p>
-      </section>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Monognomo</th>
+                <th>Empresa</th>
+                <th>Proyecto</th>
+                <th>Semana</th>
+                <th>Horas</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="entriesTableBody">
+              <!-- Rellenado por renderTable() desde script.js -->
+            </tbody>
+          </table>
+        </div>
 
-      <!-- EXPORTAR EXCEL -->
-      <section class="card">
-        <h2>Exportar</h2>
-        <button type="button" id="exportBtn" class="btn-primary full-width">
-          Exportar a Excel (CSV)
-        </button>
-        <p class="hint">Se descargará un archivo CSV compatible con Excel y Google Sheets.</p>
-      </section>
-    </div>
-
-    <!-- PESTAÑA: VER TODOS LOS PROYECTOS -->
-    <div id="projectsView" class="hidden">
-      <section class="card">
-        <h2>Todos los proyectos</h2>
-        <p class="hint">Vista agrupada por empresa y proyecto, con totales y edición/borrado.</p>
-
-        <button type="button" id="exportPdfBtn" class="btn-secondary full-width">
-          Exportar a PDF (vista proyectos)
-        </button>
-
+        <!-- VISTA AGRUPADA POR EMPRESA/PROYECTO -->
         <div id="companyView" class="company-view"></div>
       </section>
     </div>
