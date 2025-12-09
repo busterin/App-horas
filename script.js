@@ -6,7 +6,7 @@ const STORAGE_KEYS = {
   ENTRIES: "appHoras_registros",
   WORKERS: "appHoras_trabajadores",
   COMPANIES: "appHoras_empresas",
-  PROJECT_WORKERS: "appHoras_proyectoTrabajadores" // nuevo: monognomos asignados a proyectos
+  PROJECT_WORKERS: "appHoras_proyectoTrabajadores" // monognomos asignados a proyectos
 };
 
 // Empresas disponibles (por defecto)
@@ -15,8 +15,8 @@ const DEFAULT_COMPANIES = [
   "Neozink",
   "Yurmuvi",
   "Picofino",
-  "Guardianes",
-  "Escuela Energía",
+  "Guardianes del Tesoro",
+  "Escuela de la Energía",
   "General"
 ];
 
@@ -118,7 +118,7 @@ function saveEntries(entries) {
   saveToStorage(STORAGE_KEYS.ENTRIES, entries);
 }
 
-// nuevo: mapa empresa → proyecto → [monognomos]
+// mapa empresa → proyecto → [monognomos]
 function loadProjectWorkers() {
   return loadFromStorage(STORAGE_KEYS.PROJECT_WORKERS, {});
 }
@@ -162,16 +162,13 @@ function showMessage(text, type = "ok") {
 //   Fotos de trabajadores
 // =====================================
 
-// extensiones que vamos a probar, en orden
 const WORKER_IMAGE_EXTENSIONS = [".jpeg", ".jpg", ".png"];
 
-// mapa manual: nombre del trabajador → base del fichero (sin extensión)
 const WORKER_IMAGE_BASE_MAP = {
-  "Elías": "Elias",   // Elias.jpeg
-  "Inés": "Ines",     // Ines.jpeg
-  "María C": "Mariac",// Mariac.jpeg
-  "María M": "Mariam" // Mariam.jpeg
-  // el resto usa el nombre tal cual
+  "Elías": "Elias",
+  "Inés": "Ines",
+  "María C": "Mariac",
+  "María M": "Mariam"
 };
 
 function getWorkerImageBase(workerName) {
@@ -189,7 +186,7 @@ function loadWorkerImage(imgElement, workerName) {
 
   function tryNext() {
     if (index >= paths.length) {
-      imgElement.src = "images/default.png"; // fallback si no existe ninguna
+      imgElement.src = "images/default.png";
       return;
     }
     const path = paths[index++];
@@ -237,7 +234,7 @@ function createWorkerCell(workerName) {
 }
 
 // =====================================
-//   Semana → mes y primer día
+//   Semana → mes y primer día visible
 // =====================================
 
 function getMonthKeyFromWeek(weekValue) {
@@ -254,7 +251,7 @@ function getMonthKeyFromWeek(weekValue) {
   return `${year}-${mm}`; // "YYYY-MM"
 }
 
-// NUEVO: obtener Date del primer día (lunes) de esa semana
+// primer día (lunes) de la semana
 function getFirstDayDateFromWeek(weekValue) {
   if (!weekValue) return null;
   const parts = weekValue.split("-W");
@@ -263,15 +260,14 @@ function getFirstDayDateFromWeek(weekValue) {
   const week = parseInt(parts[1], 10);
   if (isNaN(year) || isNaN(week)) return null;
 
-  // aproximación a la semana ISO a partir del 1 de enero
   const d = new Date(year, 0, 1 + (week - 1) * 7);
   const day = d.getDay(); // 0 = domingo, 1 = lunes, ...
-  const diff = day === 0 ? -6 : 1 - day; // llevamos al lunes
+  const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   return d;
 }
 
-// NUEVO: formato "dd-mm-yy"
+// "dd-mm-yy"
 function formatWeekDisplay(weekValue) {
   const d = getFirstDayDateFromWeek(weekValue);
   if (!d) return weekValue;
@@ -305,7 +301,7 @@ function formatMonthKey(monthKey) {
   return `${MONTH_NAMES_ES[month - 1]} ${year}`;
 }
 
-// mes actual "YYYY-MM" (para la vista por defecto)
+// mes actual "YYYY-MM"
 function getCurrentMonthKey() {
   const d = new Date();
   const year = d.getFullYear();
@@ -323,7 +319,7 @@ function getProjectsForCompanyAndMonth(company, monthKey) {
   return [...list];
 }
 
-// etiqueta de mes del selector de proyectos
+// etiqueta mes en formulario
 function updateProjectMonthLabel() {
   const labelEl = document.getElementById("projectMonthLabel");
   const companySelect = document.getElementById("companySelect");
@@ -352,7 +348,6 @@ function updateProjectMonthLabel() {
 //   Cambio de empresa/semana: proyectos
 // =====================================
 
-// refresca los desplegables de empresa (principal y filtro)
 function refreshCompanySelects(selectedCompany) {
   const companies = loadCompanies();
   const companySelect = document.getElementById("companySelect");
@@ -363,7 +358,6 @@ function refreshCompanySelects(selectedCompany) {
       placeholder: "Elige una empresa/proyecto prin."
     });
 
-    // opción especial para añadir empresa nueva
     const addOpt = document.createElement("option");
     addOpt.value = "__new_company__";
     addOpt.textContent = "➕ Añadir empresa nueva...";
@@ -390,7 +384,6 @@ function refreshCompanySelects(selectedCompany) {
   }
 }
 
-// cuando cambia la empresa en el formulario principal
 function handleCompanyChange() {
   const companySelect = document.getElementById("companySelect");
   if (!companySelect) return;
@@ -415,18 +408,15 @@ function handleCompanyChange() {
     let companies = loadCompanies();
     if (!companies.includes(trimmed)) {
       companies.push(trimmed);
-      // guardamos lista actualizada
       saveCompanies(companies);
     }
 
-    // nos aseguramos de que exista la entrada en projectsByCompany
     const projectsByCompany = loadProjectsByCompany();
     if (!projectsByCompany[trimmed]) {
       projectsByCompany[trimmed] = {};
       saveProjectsByCompany(projectsByCompany);
     }
 
-    // refrescamos selects y dejamos seleccionada la nueva empresa
     refreshCompanySelects(trimmed);
   }
 
@@ -467,10 +457,9 @@ function updateProjectSelect() {
 }
 
 // =====================================
-//   Gestión de proyectos (por meses + monognomos)
+//   Gestión de proyectos (meses + monognomos + nombre)
 // =====================================
 
-// prompt genérico para monognomos asignados
 function promptProjectWorkers(company, projectName, currentWorkers = []) {
   const allWorkers = loadWorkers();
   const currentStr = currentWorkers.join(", ");
@@ -484,7 +473,6 @@ function promptProjectWorkers(company, projectName, currentWorkers = []) {
     currentStr
   );
   if (input === null) {
-    // cancelar -> se mantienen los actuales
     return currentWorkers;
   }
 
@@ -565,7 +553,6 @@ function handleAddProject() {
 
   saveProjectsByCompany(projectsByCompany);
 
-  // Asignación de monognomos al crear proyecto
   let projectWorkers = loadProjectWorkers();
   if (!projectWorkers[company]) projectWorkers[company] = {};
   const newWorkers = promptProjectWorkers(company, projectName, []);
@@ -578,12 +565,10 @@ function handleAddProject() {
     projectSelect.value = projectName;
   }
 
-  // nuevo proyecto → actualizamos filtro de proyectos
   refreshProjectFilterSelect();
 }
 
-// construir índice: empresa → proyecto → [meses]
-// Soporta formato nuevo (por meses) y antiguo (array plano)
+// índice: empresa → proyecto → [meses]
 function buildProjectMonthIndex() {
   const map = loadProjectsByCompany();
   const index = {};
@@ -593,8 +578,7 @@ function buildProjectMonthIndex() {
     const projIndex = {};
 
     if (Array.isArray(companyRaw)) {
-      // FORMATO ANTIGUO: ["Proyecto 1", "Proyecto 2", ...]
-      const legacyMonth = "0000-00"; // marcador para proyectos sin mes
+      const legacyMonth = "0000-00";
       companyRaw.forEach(projectName => {
         if (!projIndex[projectName]) {
           projIndex[projectName] = [];
@@ -604,7 +588,6 @@ function buildProjectMonthIndex() {
         }
       });
     } else if (companyRaw && typeof companyRaw === "object") {
-      // FORMATO NUEVO: { "YYYY-MM": ["Proyecto 1", "Proyecto 2"] }
       Object.keys(companyRaw).forEach(monthKey => {
         let list = companyRaw[monthKey];
 
@@ -631,18 +614,27 @@ function buildProjectMonthIndex() {
   return index;
 }
 
-// editar meses de un proyecto + monognomos
+// EDITAR: nombre + meses + monognomos
 function editProjectMonths(company, projectName, currentMonths) {
+  // 1) Nuevo nombre
+  const nameInput = prompt(
+    `Nuevo nombre para el proyecto en "${company}" (deja como está para mantenerlo):`,
+    projectName
+  );
+  if (nameInput === null) return; // cancelar
+  const newProjectName = nameInput.trim() || projectName;
+
+  // 2) Meses
   const currentStr = currentMonths.join(", ");
-  const input = prompt(
-    `Indica los meses (formato YYYY-MM) separados por comas para el proyecto "${projectName}".\nEjemplo: 2025-03,2025-04\n\nDeja vacío para eliminarlo de todos los meses.`,
+  const monthsInput = prompt(
+    `Indica los meses (formato YYYY-MM) separados por comas para el proyecto "${newProjectName}".\nEjemplo: 2025-03,2025-04\n\nDeja vacío para eliminarlo de todos los meses.`,
     currentStr
   );
-  if (input === null) return;
+  if (monthsInput === null) return;
 
   const newMonths = [];
-  if (input.trim() !== "") {
-    input
+  if (monthsInput.trim() !== "") {
+    monthsInput
       .split(",")
       .map(m => m.trim())
       .filter(m => m)
@@ -659,51 +651,70 @@ function editProjectMonths(company, projectName, currentMonths) {
   }
   const companyMap = projectsByCompany[company];
 
-  // quitar el proyecto de todos los meses actuales
+  // quitar nombre antiguo (y posible nombre nuevo) de todos los meses
   Object.keys(companyMap).forEach(monthKey => {
     companyMap[monthKey] = (companyMap[monthKey] || []).filter(
-      p => p !== projectName
+      p => p !== projectName && p !== newProjectName
     );
     if (companyMap[monthKey].length === 0) {
       delete companyMap[monthKey];
     }
   });
 
-  // añadir a los nuevos meses
+  // añadir a los nuevos meses con el nuevo nombre
   newMonths.forEach(monthKey => {
     const list = companyMap[monthKey] || [];
-    if (!list.includes(projectName)) {
-      list.push(projectName);
+    if (!list.includes(newProjectName)) {
+      list.push(newProjectName);
       list.sort((a, b) => a.localeCompare(b, "es"));
     }
     companyMap[monthKey] = list;
   });
 
-  // si ya no tiene meses, también podemos limpiar monognomos
-  if (newMonths.length === 0) {
-    let projectWorkers = loadProjectWorkers();
-    if (projectWorkers[company]) {
-      delete projectWorkers[company][projectName];
-      if (Object.keys(projectWorkers[company]).length === 0) {
-        delete projectWorkers[company];
+  saveProjectsByCompany(projectsByCompany);
+
+  // 3) Renombrar entradas de horas si ha cambiado el nombre
+  if (newProjectName !== projectName) {
+    let entries = loadEntries();
+    let modified = false;
+    entries.forEach(e => {
+      if (e.company === company && e.project === projectName) {
+        e.project = newProjectName;
+        modified = true;
       }
-      saveProjectWorkers(projectWorkers);
+    });
+    if (modified) {
+      saveEntries(entries);
     }
-  } else {
-    // editar monognomos asignados
-    let projectWorkers = loadProjectWorkers();
-    if (!projectWorkers[company]) projectWorkers[company] = {};
-    const currentWorkers = projectWorkers[company][projectName] || [];
-    const updatedWorkers = promptProjectWorkers(
-      company,
-      projectName,
-      currentWorkers
-    );
-    projectWorkers[company][projectName] = updatedWorkers;
-    saveProjectWorkers(projectWorkers);
   }
 
-  saveProjectsByCompany(projectsByCompany);
+  // 4) Monognomos asignados
+  let projectWorkers = loadProjectWorkers();
+  if (!projectWorkers[company]) projectWorkers[company] = {};
+  const currentWorkers = projectWorkers[company][projectName] || [];
+  const updatedWorkers = promptProjectWorkers(
+    company,
+    newProjectName,
+    currentWorkers
+  );
+  projectWorkers[company][newProjectName] = updatedWorkers;
+  if (newProjectName !== projectName) {
+    delete projectWorkers[company][projectName];
+  }
+
+  // limpieza si no hay meses ni monognomos
+  if (
+    newMonths.length === 0 &&
+    (!projectWorkers[company][newProjectName] ||
+      projectWorkers[company][newProjectName].length === 0)
+  ) {
+    delete projectWorkers[company][newProjectName];
+  }
+  if (Object.keys(projectWorkers[company]).length === 0) {
+    delete projectWorkers[company];
+  }
+
+  saveProjectWorkers(projectWorkers);
 
   renderManageProjectsView();
   updateProjectSelect();
@@ -723,7 +734,7 @@ function updateEntryHours(id, newHours) {
 
   renderTable();
   if (!document.getElementById("projectsView").classList.contains("hidden")) {
-    renderCompanyView(); // usa mes actual por defecto
+    renderCompanyView();
   }
 }
 
@@ -758,7 +769,7 @@ function handleDeleteClick(id) {
   deleteEntry(id);
 }
 
-// borrar proyecto completo + sus entradas (en todos los meses)
+// borrar proyecto completo + sus entradas
 function deleteProject(company, project) {
   if (
     !confirm(
@@ -786,7 +797,6 @@ function deleteProject(company, project) {
     saveProjectsByCompany(projectsByCompany);
   }
 
-  // limpiar monognomos asignados a ese proyecto
   let projectWorkers = loadProjectWorkers();
   if (projectWorkers[company]) {
     delete projectWorkers[company][project];
@@ -860,100 +870,23 @@ function handleSaveHours() {
 }
 
 // =====================================
-//   Tabla de resumen rápido (filtros)
+//   Tabla de "resumen rápido" (listado) SIEMPRE OCULTA
 // =====================================
 
+// Ahora, esta función NUNCA muestra registros reales.
+// Solo deja un mensaje informativo para que el listado
+// permanezca siempre oculto, tanto con filtros como sin ellos.
 function renderTable(filter = {}) {
   const tbody = document.getElementById("entriesTableBody");
   if (!tbody) return;
 
-  const hasFilter =
-    (filter.worker && filter.worker !== "") ||
-    (filter.company && filter.company !== "") ||
-    (filter.month && filter.month !== "") ||
-    (filter.project && filter.project !== "");
-
-  const entries = loadEntries();
-
-  // Si NO hay filtros: mostramos solo un mensaje y no listamos registros
-  if (!hasFilter) {
-    tbody.innerHTML = "";
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 6;
-    td.textContent = "Usa los filtros para mostrar resultados.";
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-    return;
-  }
-
-  // Si hay filtros: filtramos
-  const filtered = entries.filter(e => {
-    if (filter.worker && e.worker !== filter.worker) return false;
-    if (filter.company && e.company !== filter.company) return false;
-    if (filter.project && e.project !== filter.project) return false;
-    if (filter.month) {
-      const entryMonth = getMonthKeyFromWeek(e.week);
-      if (entryMonth !== filter.month) return false;
-    }
-    return true;
-  });
-
   tbody.innerHTML = "";
-
-  if (filtered.length === 0) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 6;
-    td.textContent = "No hay registros con ese filtro.";
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-    return;
-  }
-
-  filtered.forEach(entry => {
-    const tr = document.createElement("tr");
-    tr.dataset.id = entry.id;
-
-    const tdWorker = createWorkerCell(entry.worker);
-    tr.appendChild(tdWorker);
-
-    const tdCompany = document.createElement("td");
-    tdCompany.textContent = entry.company;
-    tr.appendChild(tdCompany);
-
-    const tdProject = document.createElement("td");
-    tdProject.textContent = entry.project;
-    tr.appendChild(tdProject);
-
-    const tdWeek = document.createElement("td");
-    // CAMBIO: mostramos primer día de la semana
-    tdWeek.textContent = formatWeekDisplay(entry.week);
-    tr.appendChild(tdWeek);
-
-    const tdHours = document.createElement("td");
-    tdHours.textContent = entry.hours.toString().replace(".", ",");
-    tr.appendChild(tdHours);
-
-    const tdActions = document.createElement("td");
-    const editBtn = document.createElement("button");
-    editBtn.className = "icon-btn edit";
-    editBtn.textContent = "✏️";
-    editBtn.title = "Editar horas";
-    editBtn.addEventListener("click", () => handleEditClick(entry.id));
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "icon-btn delete";
-    deleteBtn.textContent = "🗑️";
-    deleteBtn.title = "Borrar registro";
-    deleteBtn.addEventListener("click", () => handleDeleteClick(entry.id));
-
-    tdActions.appendChild(editBtn);
-    tdActions.appendChild(deleteBtn);
-    tr.appendChild(tdActions);
-
-    tbody.appendChild(tr);
-  });
+  const tr = document.createElement("tr");
+  const td = document.createElement("td");
+  td.colSpan = 6;
+  td.textContent = "Los registros detallados se consultan en la vista agrupada de abajo.";
+  tr.appendChild(td);
+  tbody.appendChild(tr);
 }
 
 // =====================================
@@ -968,7 +901,6 @@ function renderCompanyView(filter = {}) {
 
   container.innerHTML = "";
 
-  // mes efectivo: si no viene en filtro, usamos mes actual
   const effectiveFilter = { ...filter };
   if (!effectiveFilter.month || effectiveFilter.month === "") {
     effectiveFilter.month = getCurrentMonthKey();
@@ -1042,7 +974,6 @@ function renderCompanyView(filter = {}) {
         tr.appendChild(tdWorker);
 
         const tdWeek = document.createElement("td");
-        // CAMBIO: mostramos primer día de la semana
         tdWeek.textContent = formatWeekDisplay(entry.week);
         tr.appendChild(tdWeek);
 
@@ -1121,7 +1052,6 @@ function renderCompanyView(filter = {}) {
 
 // =====================================
 //   Vista "Gestionar proyectos"
-//   (muestra monognomos asignados)
 // =====================================
 
 function renderManageProjectsView() {
@@ -1194,7 +1124,7 @@ function renderManageProjectsView() {
         const editBtn = document.createElement("button");
         editBtn.className = "icon-btn edit";
         editBtn.textContent = "✏️ Editar";
-        editBtn.title = "Editar meses y monognomos del proyecto";
+        editBtn.title = "Editar nombre, meses y monognomos del proyecto";
         editBtn.addEventListener("click", () =>
           editProjectMonths(company, projectName, months)
         );
@@ -1244,7 +1174,6 @@ function refreshProjectFilterSelect() {
 
   const projectsSet = new Set();
 
-  // Proyectos que tienen horas registradas
   const entries = loadEntries();
   entries.forEach(e => {
     if (e.project) {
@@ -1252,7 +1181,6 @@ function refreshProjectFilterSelect() {
     }
   });
 
-  // Proyectos definidos en projectsByCompany
   const projectsByCompany = loadProjectsByCompany();
   Object.keys(projectsByCompany).forEach(company => {
     const companyRaw = projectsByCompany[company];
@@ -1280,7 +1208,7 @@ function refreshProjectFilterSelect() {
 }
 
 // =====================================
-//   Filtros (Resumen rápido + vista agrupada)
+//   Filtros (afectan SOLO a vista agrupada)
 // =====================================
 
 function handleFilter() {
@@ -1295,12 +1223,14 @@ function handleFilter() {
   if (month) filter.month = month;
   if (project) filter.project = project;
 
-  renderTable(filter);
+  // El listado detallado permanece oculto siempre
+  renderTable();
+  // La vista agrupada sí se filtra
   renderCompanyView(filter);
 }
 
 // =====================================
-//   Exportar CSV (formato tabla)
+//   Exportar CSV
 // =====================================
 
 function exportToCSV() {
@@ -1310,7 +1240,6 @@ function exportToCSV() {
     return;
   }
 
-  // Ordenamos por empresa, proyecto, trabajador, semana
   const sorted = [...entries].sort((a, b) => {
     const byCompany = a.company.localeCompare(b.company, "es");
     if (byCompany !== 0) return byCompany;
@@ -1325,22 +1254,17 @@ function exportToCSV() {
   });
 
   const lines = [];
-
-  // Cabecera principal (tabla tipo "base de datos")
   lines.push("Empresa;Proyecto;Monognomo;Semana;Horas");
 
   sorted.forEach(e => {
     const hours = e.hours ?? 0;
-    const hoursStr = String(hours).replace(".", ","); // coma decimal
-
-    // En el CSV dejamos el valor tal cual (2025-W50),
-    // si quisieras también podría cambiarse a formatWeekDisplay(e.week)
+    const hoursStr = String(hours).replace(".", ",");
+    // En CSV dejamos la semana como "2025-W50" (si prefieres dd-mm-yy también aquí, se puede cambiar)
     lines.push(
       `${e.company};${e.project};${e.worker};${e.week};${hoursStr}`
     );
   });
 
-  // ---- Bloque de totales por empresa y proyecto ----
   const groupedTotals = {};
   sorted.forEach(e => {
     const key = `${e.company}|||${e.project}`;
@@ -1358,7 +1282,6 @@ function exportToCSV() {
       const [company, project] = key.split("|||");
       const total = groupedTotals[key];
       const totalStr = String(total).replace(".", ",");
-
       lines.push(`${company};${project};;${totalStr}`);
     });
 
@@ -1376,13 +1299,11 @@ function exportToCSV() {
 }
 
 // =====================================
-//   Exportar PDF de "Ver todos los proyectos"
+//   Exportar PDF
 // =====================================
 
 function exportProjectsPDF() {
-  // Aseguramos que la vista de proyectos está activa y actualizada
   switchToProjectsView();
-  // El @media print en CSS ya se encarga de mostrar solo esta sección
   window.print();
 }
 
@@ -1406,8 +1327,9 @@ function switchToProjectsView() {
   document.getElementById("tabMain").classList.remove("active");
   document.getElementById("tabProjects").classList.add("active");
   document.getElementById("tabManageProjects").classList.remove("active");
-  // por defecto, mes actual
-  renderCompanyView();
+
+  renderTable();          // listado siempre oculto
+  renderCompanyView();    // mes actual por defecto
 }
 
 function switchToManageProjectsView() {
@@ -1426,7 +1348,7 @@ function switchToManageProjectsView() {
 
 function init() {
   const workers = loadWorkers();
-  loadCompanies(); // nos aseguramos de que hay algo en storage
+  loadCompanies();
   loadProjectsByCompany();
   loadProjectWorkers();
 
@@ -1440,13 +1362,11 @@ function init() {
 
   fillSelect(workerSelect, workers, { placeholder: "Elige tu monognomo" });
 
-  // empresas (principal y filtro)
   refreshCompanySelects();
 
   projectSelect.innerHTML = "";
   projectSelect.disabled = true;
 
-  // filtro de trabajadores
   filterWorker.innerHTML = "";
   const allWorkersOpt = document.createElement("option");
   allWorkersOpt.value = "";
@@ -1484,10 +1404,9 @@ function init() {
   updateWorkerPhoto();
   updateProjectMonthLabel();
 
-  // rellenamos desplegable de proyectos del filtro
   refreshProjectFilterSelect();
 
-  // Al iniciar, la tabla muestra solo el mensaje de "Usa los filtros..."
+  // listado siempre oculto
   renderTable();
 }
 
