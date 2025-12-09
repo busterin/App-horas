@@ -6,7 +6,8 @@ const STORAGE_KEYS = {
   ENTRIES: "appHoras_registros",
   WORKERS: "appHoras_trabajadores",
   COMPANIES: "appHoras_empresas",
-  PROJECT_WORKERS: "appHoras_proyectoTrabajadores" // monognomos asignados a proyectos
+  PROJECT_WORKERS: "appHoras_proyectoTrabajadores", // monognomos asignados a proyectos
+  REMEMBER_LOGIN: "appHoras_recordarLogin"          // recordar login
 };
 
 // Empresas disponibles (por defecto)
@@ -98,10 +99,6 @@ function loadWorkers() {
   return loadFromStorage(STORAGE_KEYS.WORKERS, DEFAULT_WORKERS);
 }
 
-function saveWorkers(workers) {
-  saveToStorage(STORAGE_KEYS.WORKERS, workers);
-}
-
 function loadCompanies() {
   return loadFromStorage(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
 }
@@ -127,11 +124,33 @@ function saveProjectWorkers(map) {
   saveToStorage(STORAGE_KEYS.PROJECT_WORKERS, map);
 }
 
+// recordar login
+function isRememberLoginEnabled() {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.REMEMBER_LOGIN) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setRememberLogin(enabled) {
+  try {
+    if (enabled) {
+      localStorage.setItem(STORAGE_KEYS.REMEMBER_LOGIN, "1");
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.REMEMBER_LOGIN);
+    }
+  } catch {
+    // si falla localStorage, simplemente no recordamos
+  }
+}
+
 // =====================================
 //   Utilidades de UI generales
 // =====================================
 
 function fillSelect(selectEl, items, { placeholder } = {}) {
+  if (!selectEl) return;
   selectEl.innerHTML = "";
   if (placeholder) {
     const opt = document.createElement("option");
@@ -151,6 +170,7 @@ function fillSelect(selectEl, items, { placeholder } = {}) {
 
 function showMessage(text, type = "ok") {
   const msgEl = document.getElementById("message");
+  if (!msgEl) return;
   msgEl.textContent = text;
   msgEl.classList.remove("ok", "error");
   if (text) {
@@ -251,7 +271,6 @@ function getMonthKeyFromWeek(weekValue) {
   return `${year}-${mm}`;
 }
 
-// primer día (lunes) de la semana
 function getFirstDayDateFromWeek(weekValue) {
   if (!weekValue) return null;
   const parts = weekValue.split("-W");
@@ -267,7 +286,6 @@ function getFirstDayDateFromWeek(weekValue) {
   return d;
 }
 
-// "dd-mm-yy"
 function formatWeekDisplay(weekValue) {
   const d = getFirstDayDateFromWeek(weekValue);
   if (!d) return weekValue;
@@ -291,7 +309,6 @@ function formatMonthKey(monthKey) {
   return `${MONTH_NAMES_ES[month - 1]} ${year}`;
 }
 
-// mes actual "YYYY-MM"
 function getCurrentMonthKey() {
   const d = new Date();
   const year = d.getFullYear();
@@ -309,7 +326,6 @@ function getProjectsForCompanyAndMonth(company, monthKey) {
   return [...list];
 }
 
-// etiqueta mes en formulario
 function updateProjectMonthLabel() {
   const labelEl = document.getElementById("projectMonthLabel");
   const companySelect = document.getElementById("companySelect");
@@ -419,6 +435,8 @@ function updateProjectSelect() {
   const projectWrapper = document.getElementById("projectFieldWrapper");
   const weekInput = document.getElementById("weekInput");
 
+  if (!companySelect || !projectSelect || !projectWrapper || !weekInput) return;
+
   const company = companySelect.value;
   const week = weekInput.value;
   const monthKey = getMonthKeyFromWeek(week);
@@ -483,6 +501,8 @@ function promptProjectWorkers(company, projectName, currentWorkers = []) {
 function handleAddProject() {
   const companySelect = document.getElementById("companySelect");
   const weekInput = document.getElementById("weekInput");
+  if (!companySelect || !weekInput) return;
+
   const company = companySelect.value;
   const week = weekInput.value;
   const monthKey = getMonthKeyFromWeek(week);
@@ -606,7 +626,6 @@ function buildProjectMonthIndex() {
 
 // EDITAR: nombre + meses + monognomos
 function editProjectMonths(company, projectName, currentMonths) {
-  // 1) Nuevo nombre
   const nameInput = prompt(
     `Nuevo nombre para el proyecto en "${company}" (deja como está para mantenerlo):`,
     projectName
@@ -614,7 +633,6 @@ function editProjectMonths(company, projectName, currentMonths) {
   if (nameInput === null) return;
   const newProjectName = nameInput.trim() || projectName;
 
-  // 2) Meses
   const currentStr = currentMonths.join(", ");
   const monthsInput = prompt(
     `Indica los meses (formato YYYY-MM) separados por comas para el proyecto "${newProjectName}".\nEjemplo: 2025-03,2025-04\n\nDeja vacío para eliminarlo de todos los meses.`,
@@ -641,7 +659,6 @@ function editProjectMonths(company, projectName, currentMonths) {
   }
   const companyMap = projectsByCompany[company];
 
-  // quitar nombre antiguo (y posible nuevo) de todos los meses
   Object.keys(companyMap).forEach(monthKey => {
     companyMap[monthKey] = (companyMap[monthKey] || []).filter(
       p => p !== projectName && p !== newProjectName
@@ -651,7 +668,6 @@ function editProjectMonths(company, projectName, currentMonths) {
     }
   });
 
-  // añadir a los nuevos meses con el nuevo nombre
   newMonths.forEach(monthKey => {
     const list = companyMap[monthKey] || [];
     if (!list.includes(newProjectName)) {
@@ -663,7 +679,6 @@ function editProjectMonths(company, projectName, currentMonths) {
 
   saveProjectsByCompany(projectsByCompany);
 
-  // 3) Renombrar entradas de horas
   if (newProjectName !== projectName) {
     let entries = loadEntries();
     let modified = false;
@@ -678,7 +693,6 @@ function editProjectMonths(company, projectName, currentMonths) {
     }
   }
 
-  // 4) Monognomos asignados
   let projectWorkers = loadProjectWorkers();
   if (!projectWorkers[company]) projectWorkers[company] = {};
   const currentWorkers = projectWorkers[company][projectName] || [];
@@ -721,7 +735,6 @@ function updateEntryHours(id, newHours) {
   entry.hours = newHours;
   saveEntries(entries);
 
-  renderTable();
   if (!document.getElementById("projectsView").classList.contains("hidden")) {
     renderCompanyView();
   }
@@ -731,7 +744,6 @@ function deleteEntry(id) {
   let entries = loadEntries();
   entries = entries.filter(e => e.id !== id);
   saveEntries(entries);
-  renderTable();
   if (!document.getElementById("projectsView").classList.contains("hidden")) {
     renderCompanyView();
   }
@@ -795,7 +807,6 @@ function deleteProject(company, project) {
     saveProjectWorkers(projectWorkers);
   }
 
-  renderTable();
   renderCompanyView();
   renderManageProjectsView();
   refreshProjectFilterSelect();
@@ -811,6 +822,8 @@ function handleSaveHours() {
   const projectSelect = document.getElementById("projectSelect");
   const weekInput = document.getElementById("weekInput");
   const hoursInput = document.getElementById("hoursInput");
+
+  if (!workerSelect || !companySelect || !weekInput || !hoursInput) return;
 
   const worker = workerSelect.value;
   const company = companySelect.value;
@@ -832,6 +845,10 @@ function handleSaveHours() {
   if (company === "General") {
     project = "General";
   } else {
+    if (!projectSelect) {
+      showMessage("Selecciona un proyecto.", "error");
+      return;
+    }
     project = projectSelect.value;
     if (!project) {
       showMessage("Selecciona un proyecto.", "error");
@@ -854,26 +871,7 @@ function handleSaveHours() {
   showMessage("Horas guardadas correctamente.", "ok");
 
   hoursInput.value = "";
-  renderTable();
   refreshProjectFilterSelect();
-}
-
-// =====================================
-//   Tabla de "resumen rápido" (siempre oculta)
-// =====================================
-
-function renderTable(filter = {}) {
-  const tbody = document.getElementById("entriesTableBody");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-  const tr = document.createElement("tr");
-  const td = document.createElement("td");
-  td.colSpan = 6;
-  td.textContent =
-    "Los registros detallados se consultan en la vista agrupada de abajo.";
-  tr.appendChild(td);
-  tbody.appendChild(tr);
 }
 
 // =====================================
@@ -882,6 +880,8 @@ function renderTable(filter = {}) {
 
 function renderCompanyView(filter = {}) {
   const container = document.getElementById("companyView");
+  if (!container) return;
+
   const entries = loadEntries();
 
   container.innerHTML = "";
@@ -1003,7 +1003,6 @@ function renderCompanyView(filter = {}) {
       table.appendChild(tbody);
       block.appendChild(table);
 
-      // OJO: aquí ya NO aparece "Borrar proyecto completo"
       companyTotal += projectTotal;
     });
 
@@ -1031,6 +1030,8 @@ function renderCompanyView(filter = {}) {
 
 function renderManageProjectsView() {
   const container = document.getElementById("manageProjectsContainer");
+  if (!container) return;
+
   container.innerHTML = "";
 
   const index = buildProjectMonthIndex();
@@ -1133,7 +1134,7 @@ function renderManageProjectsView() {
 }
 
 // =====================================
-//   Filtro de proyectos (desplegable)
+//   Filtros (afectan SOLO a vista agrupada)
 // =====================================
 
 function refreshProjectFilterSelect() {
@@ -1182,15 +1183,16 @@ function refreshProjectFilterSelect() {
     });
 }
 
-// =====================================
-//   Filtros (afectan SOLO a vista agrupada)
-// =====================================
-
 function handleFilter() {
-  const worker = document.getElementById("filterWorker").value;
-  const company = document.getElementById("filterCompany").value;
-  const month = document.getElementById("filterMonth").value;
-  const project = document.getElementById("filterProject").value;
+  const workerEl = document.getElementById("filterWorker");
+  const companyEl = document.getElementById("filterCompany");
+  const monthEl = document.getElementById("filterMonth");
+  const projectEl = document.getElementById("filterProject");
+
+  const worker = workerEl ? workerEl.value : "";
+  const company = companyEl ? companyEl.value : "";
+  const month = monthEl ? monthEl.value : "";
+  const project = projectEl ? projectEl.value : "";
 
   const filter = {};
   if (worker) filter.worker = worker;
@@ -1198,7 +1200,6 @@ function handleFilter() {
   if (month) filter.month = month;
   if (project) filter.project = project;
 
-  renderTable();           // listado siempre en modo mensaje
   renderCompanyView(filter);
 }
 
@@ -1284,30 +1285,44 @@ function exportProjectsPDF() {
 // =====================================
 
 function switchToMainView() {
-  document.getElementById("mainView").classList.remove("hidden");
-  document.getElementById("projectsView").classList.add("hidden");
-  document.getElementById("manageProjectsView").classList.add("hidden");
+  const mainView = document.getElementById("mainView");
+  const projectsView = document.getElementById("projectsView");
+  const manageView = document.getElementById("manageProjectsView");
+  if (!mainView || !projectsView || !manageView) return;
+
+  mainView.classList.remove("hidden");
+  projectsView.classList.add("hidden");
+  manageView.classList.add("hidden");
   document.getElementById("tabMain").classList.add("active");
   document.getElementById("tabProjects").classList.remove("active");
   document.getElementById("tabManageProjects").classList.remove("active");
 }
 
 function switchToProjectsView() {
-  document.getElementById("mainView").classList.add("hidden");
-  document.getElementById("projectsView").classList.remove("hidden");
-  document.getElementById("manageProjectsView").classList.add("hidden");
+  const mainView = document.getElementById("mainView");
+  const projectsView = document.getElementById("projectsView");
+  const manageView = document.getElementById("manageProjectsView");
+  if (!mainView || !projectsView || !manageView) return;
+
+  mainView.classList.add("hidden");
+  projectsView.classList.remove("hidden");
+  manageView.classList.add("hidden");
   document.getElementById("tabMain").classList.remove("active");
   document.getElementById("tabProjects").classList.add("active");
   document.getElementById("tabManageProjects").classList.remove("active");
 
-  renderTable();
   renderCompanyView();
 }
 
 function switchToManageProjectsView() {
-  document.getElementById("mainView").classList.add("hidden");
-  document.getElementById("projectsView").classList.add("hidden");
-  document.getElementById("manageProjectsView").classList.remove("hidden");
+  const mainView = document.getElementById("mainView");
+  const projectsView = document.getElementById("projectsView");
+  const manageView = document.getElementById("manageProjectsView");
+  if (!mainView || !projectsView || !manageView) return;
+
+  mainView.classList.add("hidden");
+  projectsView.classList.add("hidden");
+  manageView.classList.remove("hidden");
   document.getElementById("tabMain").classList.remove("active");
   document.getElementById("tabProjects").classList.remove("active");
   document.getElementById("tabManageProjects").classList.add("active");
@@ -1323,10 +1338,20 @@ function handleLogin() {
   const protectedContent = document.getElementById("protectedContent");
   const passwordInput = document.getElementById("passwordInput");
   const loginMessage = document.getElementById("loginMessage");
+  const rememberPassword = document.getElementById("rememberPassword");
+
+  if (!loginView || !protectedContent || !passwordInput || !loginMessage) return;
 
   const value = passwordInput.value || "";
 
   if (value === "Mayurni123!") {
+    // recordar o no
+    if (rememberPassword && rememberPassword.checked) {
+      setRememberLogin(true);
+    } else {
+      setRememberLogin(false);
+    }
+
     loginView.classList.add("hidden");
     protectedContent.classList.remove("hidden");
     passwordInput.value = "";
@@ -1338,6 +1363,7 @@ function handleLogin() {
     loginMessage.classList.add("error");
     passwordInput.value = "";
     passwordInput.focus();
+    setRememberLogin(false);
   }
 }
 
@@ -1347,11 +1373,25 @@ function handleLogin() {
 
 function init() {
   // --- Login ---
+  const loginView = document.getElementById("loginView");
+  const protectedContent = document.getElementById("protectedContent");
   const loginBtn = document.getElementById("loginBtn");
   const passwordInput = document.getElementById("passwordInput");
+
+  if (loginView && protectedContent) {
+    if (isRememberLoginEnabled()) {
+      // auto-login
+      loginView.classList.add("hidden");
+      protectedContent.classList.remove("hidden");
+    } else {
+      loginView.classList.remove("hidden");
+      protectedContent.classList.add("hidden");
+    }
+  }
+
   if (loginBtn && passwordInput) {
     loginBtn.addEventListener("click", handleLogin);
-    passwordInput.addEventListener("keydown", (e) => {
+    passwordInput.addEventListener("keydown", e => {
       if (e.key === "Enter") {
         handleLogin();
       }
@@ -1376,50 +1416,74 @@ function init() {
 
   refreshCompanySelects();
 
-  projectSelect.innerHTML = "";
-  projectSelect.disabled = true;
+  if (projectSelect) {
+    projectSelect.innerHTML = "";
+    projectSelect.disabled = true;
+  }
 
-  filterWorker.innerHTML = "";
-  const allWorkersOpt = document.createElement("option");
-  allWorkersOpt.value = "";
-  allWorkersOpt.textContent = "Todos";
-  filterWorker.appendChild(allWorkersOpt);
-  workers.forEach(w => {
-    const opt = document.createElement("option");
-    opt.value = w;
-    opt.textContent = w;
-    filterWorker.appendChild(opt);
-  });
+  if (filterWorker) {
+    filterWorker.innerHTML = "";
+    const allWorkersOpt = document.createElement("option");
+    allWorkersOpt.value = "";
+    allWorkersOpt.textContent = "Todos";
+    filterWorker.appendChild(allWorkersOpt);
+    workers.forEach(w => {
+      const opt = document.createElement("option");
+      opt.value = w;
+      opt.textContent = w;
+      filterWorker.appendChild(opt);
+    });
+  }
 
-  weekInput.value = "";
+  if (weekInput) weekInput.value = "";
   if (filterMonth) filterMonth.value = "";
 
-  companySelect.addEventListener("change", handleCompanyChange);
-  weekInput.addEventListener("change", updateProjectSelect);
-  document.getElementById("addProjectBtn").addEventListener("click", handleAddProject);
-  document.getElementById("saveBtn").addEventListener("click", handleSaveHours);
-  document.getElementById("filterBtn").addEventListener("click", handleFilter);
-  document.getElementById("exportBtn").addEventListener("click", exportToCSV);
+  if (companySelect) {
+    companySelect.addEventListener("change", handleCompanyChange);
+  }
+  if (weekInput) {
+    weekInput.addEventListener("change", updateProjectSelect);
+  }
+
+  const addProjectBtn = document.getElementById("addProjectBtn");
+  if (addProjectBtn) {
+    addProjectBtn.addEventListener("click", handleAddProject);
+  }
+
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", handleSaveHours);
+  }
+
+  const filterBtn = document.getElementById("filterBtn");
+  if (filterBtn) {
+    filterBtn.addEventListener("click", handleFilter);
+  }
+
+  const exportBtn = document.getElementById("exportBtn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", exportToCSV);
+  }
 
   const pdfBtn = document.getElementById("exportPdfBtn");
   if (pdfBtn) {
     pdfBtn.addEventListener("click", exportProjectsPDF);
   }
 
-  document.getElementById("tabMain").addEventListener("click", switchToMainView);
-  document.getElementById("tabProjects").addEventListener("click", switchToProjectsView);
-  document
-    .getElementById("tabManageProjects")
-    .addEventListener("click", switchToManageProjectsView);
+  const tabMain = document.getElementById("tabMain");
+  const tabProjects = document.getElementById("tabProjects");
+  const tabManage = document.getElementById("tabManageProjects");
+  if (tabMain) tabMain.addEventListener("click", switchToMainView);
+  if (tabProjects) tabProjects.addEventListener("click", switchToProjectsView);
+  if (tabManage) tabManage.addEventListener("click", switchToManageProjectsView);
 
-  workerSelect.addEventListener("change", updateWorkerPhoto);
+  if (workerSelect) {
+    workerSelect.addEventListener("change", updateWorkerPhoto);
+  }
   updateWorkerPhoto();
   updateProjectMonthLabel();
 
   refreshProjectFilterSelect();
-
-  // listado siempre modo mensaje
-  renderTable();
 }
 
 document.addEventListener("DOMContentLoaded", init);
