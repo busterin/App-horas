@@ -2,10 +2,11 @@
 //  Claves en localStorage
 // ==============================
 const STORAGE_KEYS = {
-  PROJECTS_BY_COMPANY: "appHoras_proyectosPorEmpresa", // ahora incluye meses
+  PROJECTS_BY_COMPANY: "appHoras_proyectosPorEmpresa", // incluye meses
   ENTRIES: "appHoras_registros",
   WORKERS: "appHoras_trabajadores",
-  COMPANIES: "appHoras_empresas"
+  COMPANIES: "appHoras_empresas",
+  PROJECT_WORKERS: "appHoras_proyectoTrabajadores" // nuevo: monognomos asignados a proyectos
 };
 
 // Empresas disponibles (por defecto)
@@ -115,6 +116,15 @@ function loadEntries() {
 
 function saveEntries(entries) {
   saveToStorage(STORAGE_KEYS.ENTRIES, entries);
+}
+
+// nuevo: mapa empresa → proyecto → [monognomos]
+function loadProjectWorkers() {
+  return loadFromStorage(STORAGE_KEYS.PROJECT_WORKERS, {});
+}
+
+function saveProjectWorkers(map) {
+  saveToStorage(STORAGE_KEYS.PROJECT_WORKERS, map);
 }
 
 // =====================================
@@ -265,6 +275,15 @@ function formatMonthKey(monthKey) {
   const month = parseInt(monthStr, 10);
   if (!month || month < 1 || month > 12) return monthKey;
   return `${MONTH_NAMES_ES[month - 1]} ${year}`;
+}
+
+// mes actual "YYYY-MM" (para la vista por defecto)
+function getCurrentMonthKey() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const mm = String(month).padStart(2, "0");
+  return `${year}-${mm}`;
 }
 
 // proyectos para empresa+mes
@@ -420,8 +439,40 @@ function updateProjectSelect() {
 }
 
 // =====================================
-//   Gestión de proyectos (por meses)
+//   Gestión de proyectos (por meses + monognomos)
 // =====================================
+
+// prompt genérico para monognomos asignados
+function promptProjectWorkers(company, projectName, currentWorkers = []) {
+  const allWorkers = loadWorkers();
+  const currentStr = currentWorkers.join(", ");
+  const available = allWorkers.join(", ");
+
+  const input = prompt(
+    `Indica los monognomos asignados al proyecto "${projectName}" en "${company}".` +
+      `\nEscribe los nombres separados por comas.` +
+      `\nDisponibles: ${available}` +
+      `\n\nEjemplo: Alba, Buster, Sara`,
+    currentStr
+  );
+  if (input === null) {
+    // cancelar -> se mantienen los actuales
+    return currentWorkers;
+  }
+
+  const result = [];
+  input
+    .split(",")
+    .map(n => n.trim())
+    .filter(n => n)
+    .forEach(n => {
+      if (allWorkers.includes(n) && !result.includes(n)) {
+        result.push(n);
+      }
+    });
+
+  return result;
+}
 
 function handleAddProject() {
   const companySelect = document.getElementById("companySelect");
@@ -486,6 +537,13 @@ function handleAddProject() {
 
   saveProjectsByCompany(projectsByCompany);
 
+  // Asignación de monognomos al crear proyecto
+  let projectWorkers = loadProjectWorkers();
+  if (!projectWorkers[company]) projectWorkers[company] = {};
+  const newWorkers = promptProjectWorkers(company, projectName, []);
+  projectWorkers[company][projectName] = newWorkers;
+  saveProjectWorkers(projectWorkers);
+
   updateProjectSelect();
   const projectSelect = document.getElementById("projectSelect");
   if (projectSelect && projectSelect.options.length > 0) {
@@ -545,7 +603,7 @@ function buildProjectMonthIndex() {
   return index;
 }
 
-// editar meses de un proyecto
+// editar meses de un proyecto + monognomos
 function editProjectMonths(company, projectName, currentMonths) {
   const currentStr = currentMonths.join(", ");
   const input = prompt(
@@ -593,10 +651,35 @@ function editProjectMonths(company, projectName, currentMonths) {
     companyMap[monthKey] = list;
   });
 
+  // si ya no tiene meses, también podemos limpiar monognomos
+  if (newMonths.length === 0) {
+    let projectWorkers = loadProjectWorkers();
+    if (projectWorkers[company]) {
+      delete projectWorkers[company][projectName];
+      if (Object.keys(projectWorkers[company]).length === 0) {
+        delete projectWorkers[company];
+      }
+      saveProjectWorkers(projectWorkers);
+    }
+  } else {
+    // editar monognomos asignados
+    let projectWorkers = loadProjectWorkers();
+    if (!projectWorkers[company]) projectWorkers[company] = {};
+    const currentWorkers = projectWorkers[company][projectName] || [];
+    const updatedWorkers = promptProjectWorkers(
+      company,
+      projectName,
+      currentWorkers
+    );
+    projectWorkers[company][projectName] = updatedWorkers;
+    saveProjectWorkers(projectWorkers);
+  }
+
   saveProjectsByCompany(projectsByCompany);
 
   renderManageProjectsView();
   updateProjectSelect();
+  refreshProjectFilterSelect();
 }
 
 // =====================================
@@ -609,9 +692,11 @@ function updateEntryHours(id, newHours) {
   if (!entry) return;
   entry.hours = newHours;
   saveEntries(entries);
+
+  // re-render con último filtro aplicado? usamos sin filtro (tabla ya va por filtros)
   renderTable();
   if (!document.getElementById("projectsView").classList.contains("hidden")) {
-    renderCompanyView();
+    renderCompanyView(); // usa mes actual por defecto
   }
 }
 
@@ -672,6 +757,16 @@ function deleteProject(company, project) {
       }
     });
     saveProjectsByCompany(projectsByCompany);
+  }
+
+  // limpiar monognomos asignados a ese proyecto
+  let projectWorkers = loadProjectWorkers();
+  if (projectWorkers[company]) {
+    delete projectWorkers[company][project];
+    if (Object.keys(projectWorkers[company]).length === 0) {
+      delete projectWorkers[company];
+    }
+    saveProjectWorkers(projectWorkers);
   }
 
   renderTable();
@@ -738,7 +833,7 @@ function handleSaveHours() {
 }
 
 // =====================================
-//   Tabla de resumen rápido
+//   Tabla de resumen rápido (filtros)
 // =====================================
 
 function renderTable(filter = {}) {
@@ -765,7 +860,7 @@ function renderTable(filter = {}) {
     return;
   }
 
-  // Si hay filtros: filtramos normalmente
+  // Si hay filtros: filtramos
   const filtered = entries.filter(e => {
     if (filter.worker && e.worker !== filter.worker) return false;
     if (filter.company && e.company !== filter.company) return false;
@@ -834,24 +929,43 @@ function renderTable(filter = {}) {
 }
 
 // =====================================
-//   Vista "Todos los proyectos"
+//   Vista "Todos los proyectos" (agrupada)
+//   → Por defecto: solo mes actual
+//   → Con filtro: respeta filtro (mes, monognomo, empresa, proyecto)
 // =====================================
 
-function renderCompanyView() {
+function renderCompanyView(filter = {}) {
   const container = document.getElementById("companyView");
   const entries = loadEntries();
 
   container.innerHTML = "";
 
-  if (entries.length === 0) {
+  // mes efectivo: si no viene en filtro, usamos mes actual
+  const effectiveFilter = { ...filter };
+  if (!effectiveFilter.month || effectiveFilter.month === "") {
+    effectiveFilter.month = getCurrentMonthKey();
+  }
+
+  const filteredEntries = entries.filter(e => {
+    if (effectiveFilter.worker && e.worker !== effectiveFilter.worker) return false;
+    if (effectiveFilter.company && e.company !== effectiveFilter.company) return false;
+    if (effectiveFilter.project && e.project !== effectiveFilter.project) return false;
+    if (effectiveFilter.month) {
+      const entryMonth = getMonthKeyFromWeek(e.week);
+      if (entryMonth !== effectiveFilter.month) return false;
+    }
+    return true;
+  });
+
+  if (filteredEntries.length === 0) {
     const p = document.createElement("p");
-    p.textContent = "No hay registros todavía.";
+    p.textContent = "No hay registros para el mes seleccionado.";
     container.appendChild(p);
     return;
   }
 
   const grouped = {};
-  entries.forEach(e => {
+  filteredEntries.forEach(e => {
     if (!grouped[e.company]) grouped[e.company] = {};
     if (!grouped[e.company][e.project]) grouped[e.company][e.project] = [];
     grouped[e.company][e.project].push(e);
@@ -978,6 +1092,7 @@ function renderCompanyView() {
 
 // =====================================
 //   Vista "Gestionar proyectos"
+//   (ahora también muestra monognomos asignados)
 // =====================================
 
 function renderManageProjectsView() {
@@ -985,6 +1100,7 @@ function renderManageProjectsView() {
   container.innerHTML = "";
 
   const index = buildProjectMonthIndex();
+  const projectWorkers = loadProjectWorkers();
 
   const companies = Object.keys(index).sort((a, b) =>
     a.localeCompare(b, "es")
@@ -1009,7 +1125,7 @@ function renderManageProjectsView() {
     const table = document.createElement("table");
     const thead = document.createElement("thead");
     thead.innerHTML =
-      "<tr><th>Proyecto</th><th>Meses</th><th>Acciones</th></tr>";
+      "<tr><th>Proyecto</th><th>Meses</th><th>Monognomos asignados</th><th>Acciones</th></tr>";
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
@@ -1033,12 +1149,23 @@ function renderManageProjectsView() {
         tdMonths.textContent = pretty || "—";
         tr.appendChild(tdMonths);
 
+        const tdWorkers = document.createElement("td");
+        const workersForProject =
+          (projectWorkers[company] &&
+            projectWorkers[company][projectName]) ||
+          [];
+        tdWorkers.textContent =
+          workersForProject.length > 0
+            ? workersForProject.join(", ")
+            : "—";
+        tr.appendChild(tdWorkers);
+
         const tdActions = document.createElement("td");
 
         const editBtn = document.createElement("button");
         editBtn.className = "icon-btn edit";
-        editBtn.textContent = "✏️ Meses";
-        editBtn.title = "Editar meses del proyecto";
+        editBtn.textContent = "✏️ Editar";
+        editBtn.title = "Editar meses y monognomos del proyecto";
         editBtn.addEventListener("click", () =>
           editProjectMonths(company, projectName, months)
         );
@@ -1124,7 +1251,7 @@ function refreshProjectFilterSelect() {
 }
 
 // =====================================
-//   Filtros
+//   Filtros (Resumen rápido + vista agrupada)
 // =====================================
 
 function handleFilter() {
@@ -1140,6 +1267,7 @@ function handleFilter() {
   if (project) filter.project = project;
 
   renderTable(filter);
+  renderCompanyView(filter);
 }
 
 // =====================================
@@ -1247,6 +1375,7 @@ function switchToProjectsView() {
   document.getElementById("tabMain").classList.remove("active");
   document.getElementById("tabProjects").classList.add("active");
   document.getElementById("tabManageProjects").classList.remove("active");
+  // por defecto, mes actual
   renderCompanyView();
 }
 
@@ -1268,6 +1397,7 @@ function init() {
   const workers = loadWorkers();
   loadCompanies(); // nos aseguramos de que hay algo en storage
   loadProjectsByCompany();
+  loadProjectWorkers();
 
   const workerSelect = document.getElementById("workerSelect");
   const companySelect = document.getElementById("companySelect");
