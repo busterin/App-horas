@@ -25,6 +25,13 @@
         <input type="password" id="passwordInput" />
       </label>
 
+      <label class="field small">
+        <span>
+          <input type="checkbox" id="rememberPassword" />
+          Recordar contraseña en este dispositivo
+        </span>
+      </label>
+
       <button type="button" id="loginBtn" class="btn-primary full-width">
         Acceder
       </button>
@@ -124,7 +131,7 @@
             Usa los filtros para ver un resumen agrupado por empresa y proyecto.
           </p>
 
-          <!-- FILTROS (RESUMEN RÁPIDO) -->
+          <!-- FILTROS -->
           <div class="filters">
             <label class="field small">
               <span>Monognomos</span>
@@ -149,25 +156,7 @@
             <button type="button" id="filterBtn" class="btn-secondary">Filtrar</button>
           </div>
 
-          <!-- LISTADO DETALLADO (SIEMPRE OCULTO, SOLO MENSAJE) -->
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Monognomo</th>
-                  <th>Empresa</th>
-                  <th>Proyecto</th>
-                  <th>Semana</th>
-                  <th>Horas</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="entriesTableBody">
-                <!-- Rellenado por renderTable() con sólo un mensaje -->
-              </tbody>
-            </table>
-          </div>
-
+          <!-- IMPORTANTE: Se elimina la tabla de registros detallados -->
           <!-- VISTA AGRUPADA POR EMPRESA/PROYECTO -->
           <div id="companyView" class="company-view"></div>
         </section>
