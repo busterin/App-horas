@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registro de horas y eventos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============================= -->
+  <!--           CABECERA            -->
+  <!-- ============================= -->
+  <header class="app-header">
+    <img src="images/logo.png" alt="Logo de la empresa" class="app-logo" />
+    <h1>Registro de horas y eventos</h1>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ============================= -->
+    <!--           LOGIN VIEW          -->
+    <!-- ============================= -->
+    <div id="loginView">
+      <section class="card">
+        <h2>Acceso</h2>
+        <p class="hint">Introduce contraseña para acceder</p>
+
+        <label class="field">
+          <span>Contraseña</span>
+          <input type="password" id="passwordInput" />
+        </label>
+
+        <label class="field">
+          <span>
+            <input type="checkbox" id="rememberPassword" />
+            Recordar contraseña en este dispositivo
+          </span>
+        </label>
+
+        <button type="button" id="loginBtn" class="btn-primary full-width">
+          Confirmar
+        </button>
+
+        <p id="loginMessage" class="message"></p>
+      </section>
+    </div>
+
+    <!-- ================================= -->
+    <!--       CONTENIDO PROTEGIDO         -->
+    <!-- ================================= -->
+    <div id="protectedContent" class="hidden">
+
+      <!-- ===== TABS ===== -->
+      <nav class="tabs">
+        <button type="button" id="tabMain" class="tab active">Registro y resumen</button>
+        <button type="button" id="tabProjects" class="tab">Ver todos los proyectos</button>
+        <button type="button" id="tabManageProjects" class="tab">Gestionar proyectos</button>
+        <button type="button" id="tabWorkDivision" class="tab">División de trabajo</button>
+      </nav>
+
+      <!-- ================================= -->
+      <!--        REGISTRO DE HORAS           -->
+      <!-- ================================= -->
+      <div id="mainView">
+
+        <section class="card">
+          <h2>Introducir horas</h2>
+
+          <label class="field">
+            <span>Elige tu monognomo</span>
+            <select id="workerSelect"></select>
+          </label>
+
+          <div class="worker-photo-wrapper">
+            <img id="workerPhoto" class="worker-photo" />
+          </div>
+
+          <label class="field">
+            <span>Empresa/proyecto prin.</span>
+            <select id="companySelect"></select>
+          </label>
+
+          <label class="field" id="projectFieldWrapper">
+            <span>Proyecto</span>
+            <div class="inline-field">
+              <select id="projectSelect"></select>
+              <button type="button" id="addProjectBtn" class="btn-secondary">+</button>
+            </div>
+            <div id="projectMonthLabel" class="project-month-label">
+              Selecciona empresa y semana para ver los proyectos del mes.
+            </div>
+          </label>
+
+          <label class="field">
+            <span>Semana</span>
+            <input type="week" id="weekInput" />
+          </label>
+
+          <label class="field">
+            <span>Horas trabajadas</span>
+            <input type="number" id="hoursInput" min="0" step="0.25" />
+          </label>
+
+          <button type="button" id="saveBtn" class="btn-primary full-width">
+            Guardar horas
+          </button>
+
+          <p id="message" class="message"></p>
+        </section>
+
+        <section class="card">
+          <h2>Exportar</h2>
+          <button type="button" id="exportBtn" class="btn-primary full-width">
+            Exportar a Excel (CSV)
+          </button>
+          <button type="button" id="exportPdfBtn" class="btn-secondary full-width">
+            Exportar a PDF (vista proyectos)
+          </button>
+          <p class="hint">El Excel se descarga en formato CSV. El PDF recoge la vista "Ver todos los proyectos".</p>
+        </section>
+
+      </div>
+
+      <!-- ================================= -->
+      <!--       VER TODOS LOS PROYECTOS      -->
+      <!-- ================================= -->
+      <div id="projectsView" class="hidden">
+        <section class="card">
+          <h2>Todos los proyectos</h2>
+          <p class="hint">Filtra por monognomo, empresa, mes o proyecto.</p>
+
+          <div class="filters">
+            <label class="field small">
+              <span>Monognomo</span>
+              <select id="filterWorker"></select>
+            </label>
+
+            <label class="field small">
+              <span>Empresa</span>
+              <select id="filterCompany"></select>
+            </label>
+
+            <label class="field small">
+              <span>Mes</span>
+              <input type="month" id="filterMonth" />
+            </label>
+
+            <label class="field small">
+              <span>Proyecto</span>
+              <select id="filterProject"></select>
+            </label>
+
+            <button type="button" id="filterBtn" class="btn-secondary">Filtrar</button>
+          </div>
+
+          <div id="companyView" class="company-view"></div>
+        </section>
+      </div>
+
+      <!-- ================================= -->
+      <!--         GESTIONAR PROYECTOS        -->
+      <!-- ================================= -->
+      <div id="manageProjectsView" class="hidden">
+        <section class="card">
+          <h2>Gestionar proyectos por meses</h2>
+          <p class="hint">Aquí puedes modificar los meses asociados.</p>
+
+          <div class="filters">
+            <label class="field small">
+              <span>Mes</span>
+              <input type="month" id="manageProjectsMonth" />
+            </label>
+
+            <button type="button" id="manageProjectsMonthBtn" class="btn-secondary">
+              Filtrar
+            </button>
+
+            <button type="button" id="manageProjectsMonthClearBtn" class="btn-secondary">
+              Ver todos
+            </button>
+          </div>
+
+          <div id="manageProjectsContainer" class="company-view"></div>
+        </section>
+      </div>
+
+      <!-- ================================= -->
+      <!--        DIVISIÓN DE TRABAJO         -->
+      <!-- ================================= -->
+      <div id="workDivisionView" class="hidden">
+
+        <section class="card">
+          <h2>División de trabajo</h2>
+
+          <div class="filters">
+            <label class="field small">
+              <span>Proyectos asignados</span>
+              <select id="wdFilterWorker"></select>
+            </label>
+
+            <label class="field small">
+              <span>Mes</span>
+              <input type="month" id="wdFilterMonth" />
+            </label>
+
+            <button type="button" id="wdFilterBtn" class="btn-secondary">Filtrar eventos</button>
+          </div>
+
+          <button type="button" id="wdShowFormBtn" class="btn-primary full-width">
+            Añadir evento
+          </button>
+        </section>
+
+        <!-- FORMULARIO -->
+        <section id="wdFormCard" class="card hidden">
+          <h2>Añadir / editar evento</h2>
+
+          <label class="field">
+            <span>Evento</span>
+            <select id="wdEventSelect"></select>
+          </label>
+
+          <label class="field">
+            <span>Lugar</span>
+            <input type="text" id="wdPlace" />
+          </label>
+
+          <label class="field">
+            <span>Fecha del evento</span>
+            <input type="date" id="wdEventDate" />
+          </label>
+
+          <label class="field">
+            <span>Coordinador proyecto</span>
+            <select id="wdCoordProject"></select>
+          </label>
+
+          <label class="field">
+            <span>Coordinador producción</span>
+            <select id="wdCoordProd"></select>
+          </label>
+
+          <label class="field">
+            <span>Equipo montaje</span>
+            <select id="wdTeamSetup" multiple></select>
+          </label>
+
+          <label class="field">
+            <span>Fecha montaje</span>
+            <input type="date" id="wdSetupDate" />
+          </label>
+
+          <label class="field">
+            <span>Vehículo montaje</span>
+            <select id="wdSetupVehicle"></select>
+          </label>
+
+          <label class="field">
+            <span>Equipo desmontaje</span>
+            <select id="wdTeamDismantle" multiple></select>
+          </label>
+
+          <label class="field">
+            <span>Fecha desmontaje</span>
+            <input type="date" id="wdDismantleDate" />
+          </label>
+
+          <label class="field">
+            <span>Vehículo desmontaje</span>
+            <select id="wdDismantleVehicle"></select>
+          </label>
+
+          <label class="field">
+            <span>Noches fuera</span>
+            <input type="text" id="wdNights" />
+          </label>
+
+          <button type="button" id="wdSaveBtn" class="btn-primary full-width">
+            Guardar
+          </button>
+
+          <p id="wdMessage" class="message"></p>
+        </section>
+
+        <!-- LISTADO -->
+        <section class="card">
+          <h2>Eventos del mes</h2>
+          <div id="wdListContainer" class="company-view"></div>
+        </section>
+
+        <!-- EXPORTAR DIVISIÓN DE TRABAJO -->
+        <section class="card">
+          <h2>Exportar división de trabajo</h2>
+          <button type="button" id="wdExportCsvBtn" class="btn-primary full-width">
+            Exportar a Excel (CSV)
+          </button>
+          <button type="button" id="wdExportPdfBtn" class="btn-secondary full-width">
+            Exportar a PDF
+          </button>
+          <p class="hint">
+            Se exportan los eventos según los filtros de mes y monognomo.
+          </p>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
