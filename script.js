@@ -2594,30 +2594,45 @@ function handleLogin() {
 
   const value = passwordInput.value || "";
 
-  if (value === "Mayurni123!") {
-    if (rememberPassword && rememberPassword.checked) {
-      setRememberLogin(true);
-    } else {
-      setRememberLogin(false);
-    }
+  // Validación en servidor (api.php?action=login)
+  fetch(`${API_BASE_URL}?action=login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: value })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.success) {
+        if (rememberPassword && rememberPassword.checked) {
+          setRememberLogin(true);
+        } else {
+          setRememberLogin(false);
+        }
 
-    loginView.classList.add("hidden");
-    protectedContent.classList.remove("hidden");
-    passwordInput.value = "";
-    loginMessage.textContent = "";
-    loginMessage.classList.remove("error", "ok");
+        loginView.classList.add("hidden");
+        protectedContent.classList.remove("hidden");
+        passwordInput.value = "";
+        loginMessage.textContent = "";
+        loginMessage.classList.remove("error", "ok");
 
-    fetchEntriesFromServer();
-    fetchProjectsConfigFromServer();
-    fetchWorkDivisionFromServer();
-  } else {
-    loginMessage.textContent = "Contraseña incorrecta.";
-    loginMessage.classList.remove("ok");
-    loginMessage.classList.add("error");
-    passwordInput.value = "";
-    passwordInput.focus();
-    setRememberLogin(false);
-  }
+        fetchEntriesFromServer();
+        fetchProjectsConfigFromServer();
+        fetchWorkDivisionFromServer();
+      } else {
+        loginMessage.textContent = "Contraseña incorrecta.";
+        loginMessage.classList.remove("ok");
+        loginMessage.classList.add("error");
+        passwordInput.value = "";
+        passwordInput.focus();
+        setRememberLogin(false);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      loginMessage.textContent = "Error de conexión con el servidor.";
+      loginMessage.classList.remove("ok");
+      loginMessage.classList.add("error");
+    });
 }
 
 // =====================================

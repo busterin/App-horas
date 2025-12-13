@@ -34,7 +34,12 @@ try {
             save_projects_config($pdo);
             break;
 
-        default:
+        
+        case 'login':
+            login_action();
+            break;
+
+default:
             http_response_code(400);
             echo json_encode([
                 "success" => false,
@@ -325,5 +330,26 @@ function save_projects_config(PDO $pdo) {
 
     echo json_encode([
         "success" => true
+    ]);
+}
+
+
+// ---- LOGIN (valida contraseña de acceso a la app) ----
+function login_action() {
+    $raw = file_get_contents('php://input');
+    $data = json_decode($raw, true);
+
+    $password = isset($data['password']) ? (string)$data['password'] : '';
+
+    // Hash en config.php
+    global $APP_PASS_HASH;
+
+    $ok = false;
+    if (!empty($APP_PASS_HASH) && $password !== '') {
+        $ok = password_verify($password, $APP_PASS_HASH);
+    }
+
+    echo json_encode([
+        'success' => (bool)$ok
     ]);
 }
