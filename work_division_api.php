@@ -2,7 +2,9 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
-// ⬇️ Cambia estos datos por los de tu base de datos (los mismos que en api.php)
+require_once __DIR__ . '/config.php';
+
+// ✅ Reutilizamos la misma config de BD
 $dbHost = 'db5019170058.hosting-data.io';
 $dbUser = 'dbu971505';
 $dbPass = 'Mayurni123!';
@@ -11,166 +13,154 @@ $dbName = 'dbs15054979';
 $mysqli = new mysqli($dbHost, $dbUser, $dbPass, $dbName);
 if ($mysqli->connect_error) {
     echo json_encode([
-        'success' => false,
-        'error' => 'Error de conexión: ' . $mysqli->connect_error
+        "success" => false,
+        "error" => "Error conexión BD: " . $mysqli->connect_error
     ]);
     exit;
 }
+$mysqli->set_charset("utf8mb4");
 
-$action = isset($_GET['action']) ? $_GET['action'] : '';
+$action = isset($_GET["action"]) ? $_GET["action"] : "";
 
-if ($action === 'list') {
-    // Listar todos los eventos de división de trabajo
-    $sql = "SELECT * FROM work_division ORDER BY event_date, event_name, id";
-    $result = $mysqli->query($sql);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
-    if (!$result) {
+function read_body_json() {
+    $raw = file_get_contents("php://input");
+    if (!$raw) return [];
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : [];
+}
+
+switch ($action) {
+    case "list_entries":
+        list_entries($mysqli);
+        break;
+
+    case "add_entry":
+        add_entry($mysqli);
+        break;
+
+    case "update_entry":
+        update_entry($mysqli);
+        break;
+
+    case "delete_entry":
+        delete_entry($mysqli);
+        break;
+
+    case "save_vehicles":
+        save_vehicles($mysqli);
+        break;
+
+    default:
         echo json_encode([
-            'success' => false,
-            'error' => 'Error en la consulta: ' . $mysqli->error
+            "success" => false,
+            "error" => "Acción no válida"
         ]);
-        exit;
-    }
+        break;
+}
 
-    $items = [];
-    while ($row = $result->fetch_assoc()) {
-        $items[] = [
-            'id' => (int)$row['id'],
-            'eventName' => $row['event_name'],
-            'place' => $row['place'],
-            'eventDate' => $row['event_date'],
-            'coordProject' => $row['coord_project'],
-            'coordProd' => $row['coord_prod'],
-            'teamSetup' => $row['team_setup']
-                ? json_decode($row['team_setup'], true)
-                : [],
-            'setupDate' => $row['setup_date'],
-            'setupVehicle' => $row['setup_vehicle'],
-            'teamDismantle' => $row['team_dismantle']
-                ? json_decode($row['team_dismantle'], true)
-                : [],
-            'dismantleDate' => $row['dismantle_date'],
-            'dismantleVehicle' => $row['dismantle_vehicle'],
-            'nights' => $row['nights']
-        ];
+function list_entries($mysqli) {
+    $sql = "SELECT id, date, vehicle, worker, hours, task
+            FROM work_division_entries
+            ORDER BY date DESC, id DESC";
+    $res = $mysqli->query($sql);
+
+    $rows = [];
+    if ($res) {
+        while ($r = $res->fetch_assoc()) {
+            $rows[] = $r;
+        }
     }
 
     echo json_encode([
-        'success' => true,
-        'items' => $items
+        "success" => true,
+        "entries" => $rows
     ]);
-    exit;
 }
 
-if ($action === 'save_all') {
-    // Guardar todo el listado (sobrescribe la tabla)
-    $raw = file_get_contents('php://input');
-    $data = json_decode($raw, true);
+function add_entry($mysqli) {
+    $data = read_body_json();
 
-    if (!is_array($data) || !isset($data['items']) || !is_array($data['items'])) {
-        echo json_encode([
-            'success' => false,
-            'error' => 'Formato de datos inválido'
-        ]);
-        exit;
+    $date = $data["date"] ?? "";
+    $vehicle = $data["vehicle"] ?? "";
+    $worker = $data["worker"] ?? "";
+    $hours = $data["hours"] ?? 0;
+    $task = $data["task"] ?? "";
+
+    if ($date === "" || $vehicle === "" || $worker === "") {
+        echo json_encode(["success" => false, "error" => "Campos obligatorios incompletos"]);
+        return;
     }
 
-    $items = $data['items'];
+    $stmt = $mysqli->prepare("INSERT INTO work_division_entries (date, vehicle, worker, hours, task) VALUES (?,?,?,?,?)");
+    $stmt->bind_param("sssds", $date, $vehicle, $worker, $hours, $task);
 
-    $mysqli->begin_transaction();
+    $ok = $stmt->execute();
+    $stmt->close();
 
-    try {
-        // Vaciar tabla
-        if (!$mysqli->query("DELETE FROM work_division")) {
-            throw new Exception('Error al borrar datos existentes: ' . $mysqli->error);
-        }
-
-        // Preparar insert
-        $stmt = $mysqli->prepare("
-            INSERT INTO work_division (
-                event_name,
-                place,
-                event_date,
-                coord_project,
-                coord_prod,
-                team_setup,
-                setup_date,
-                setup_vehicle,
-                team_dismantle,
-                dismantle_date,
-                dismantle_vehicle,
-                nights
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-        ");
-
-        if (!$stmt) {
-            throw new Exception('Error en prepare: ' . $mysqli->error);
-        }
-
-        foreach ($items as $item) {
-            $eventName = isset($item['eventName']) ? $item['eventName'] : '';
-            $place = isset($item['place']) ? $item['place'] : null;
-            $eventDate = isset($item['eventDate']) ? $item['eventDate'] : null;
-            $coordProject = isset($item['coordProject']) ? $item['coordProject'] : null;
-            $coordProd = isset($item['coordProd']) ? $item['coordProd'] : null;
-
-            $teamSetupArr = isset($item['teamSetup']) && is_array($item['teamSetup'])
-                ? $item['teamSetup'] : [];
-            $teamSetupJson = json_encode($teamSetupArr);
-
-            $setupDate = isset($item['setupDate']) ? $item['setupDate'] : null;
-            $setupVehicle = isset($item['setupVehicle']) ? $item['setupVehicle'] : null;
-
-            $teamDismantleArr = isset($item['teamDismantle']) && is_array($item['teamDismantle'])
-                ? $item['teamDismantle'] : [];
-            $teamDismantleJson = json_encode($teamDismantleArr);
-
-            $dismantleDate = isset($item['dismantleDate']) ? $item['dismantleDate'] : null;
-            $dismantleVehicle = isset($item['dismantleVehicle']) ? $item['dismantleVehicle'] : null;
-
-            $nights = isset($item['nights']) ? $item['nights'] : null;
-
-            $stmt->bind_param(
-                "ssssssssssss",
-                $eventName,
-                $place,
-                $eventDate,
-                $coordProject,
-                $coordProd,
-                $teamSetupJson,
-                $setupDate,
-                $setupVehicle,
-                $teamDismantleJson,
-                $dismantleDate,
-                $dismantleVehicle,
-                $nights
-            );
-
-            if (!$stmt->execute()) {
-                throw new Exception('Error al insertar: ' . $stmt->error);
-            }
-        }
-
-        $stmt->close();
-        $mysqli->commit();
-
-        echo json_encode([
-            'success' => true
-        ]);
-        exit;
-
-    } catch (Exception $e) {
-        $mysqli->rollback();
-        echo json_encode([
-            'success' => false,
-            'error' => $e->getMessage()
-        ]);
-        exit;
-    }
+    echo json_encode(["success" => $ok]);
 }
 
-// Acción desconocida
-echo json_encode([
-    'success' => false,
-    'error' => 'Acción no reconocida'
-]);
+function update_entry($mysqli) {
+    $data = read_body_json();
+
+    $id = isset($data["id"]) ? intval($data["id"]) : 0;
+    $date = $data["date"] ?? "";
+    $vehicle = $data["vehicle"] ?? "";
+    $worker = $data["worker"] ?? "";
+    $hours = $data["hours"] ?? 0;
+    $task = $data["task"] ?? "";
+
+    if ($id <= 0) {
+        echo json_encode(["success" => false, "error" => "ID inválido"]);
+        return;
+    }
+
+    $stmt = $mysqli->prepare("UPDATE work_division_entries SET date=?, vehicle=?, worker=?, hours=?, task=? WHERE id=?");
+    $stmt->bind_param("sssdsi", $date, $vehicle, $worker, $hours, $task, $id);
+
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    echo json_encode(["success" => $ok]);
+}
+
+function delete_entry($mysqli) {
+    $data = read_body_json();
+    $id = isset($data["id"]) ? intval($data["id"]) : 0;
+
+    if ($id <= 0) {
+        echo json_encode(["success" => false, "error" => "ID inválido"]);
+        return;
+    }
+
+    $stmt = $mysqli->prepare("DELETE FROM work_division_entries WHERE id=?");
+    $stmt->bind_param("i", $id);
+
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    echo json_encode(["success" => $ok]);
+}
+
+function save_vehicles($mysqli) {
+    $data = read_body_json();
+    $vehicles = isset($data["vehicles"]) && is_array($data["vehicles"]) ? $data["vehicles"] : [];
+
+    $json = json_encode($vehicles, JSON_UNESCAPED_UNICODE);
+
+    // Tabla work_division_config con una sola fila
+    $mysqli->query("DELETE FROM work_division_config");
+
+    $stmt = $mysqli->prepare("INSERT INTO work_division_config (vehicles_json) VALUES (?)");
+    $stmt->bind_param("s", $json);
+
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    echo json_encode(["success" => $ok]);
+}
