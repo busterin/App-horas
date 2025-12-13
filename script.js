@@ -2583,7 +2583,7 @@ function switchToWorkDivisionView() {
 //   Login
 // =====================================
 
-function handleLogin() {
+async function handleLogin() {
   const loginView = document.getElementById("loginView");
   const protectedContent = document.getElementById("protectedContent");
   const passwordInput = document.getElementById("passwordInput");
@@ -2594,46 +2594,58 @@ function handleLogin() {
 
   const value = passwordInput.value || "";
 
-  // Validación en servidor (api.php?action=login)
-  fetch(`${API_BASE_URL}?action=login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password: value })
-  })
-    .then(r => r.json())
-    .then(data => {
-      if (data && data.success) {
-        if (rememberPassword && rememberPassword.checked) {
-          setRememberLogin(true);
-        } else {
-          setRememberLogin(false);
-        }
+  try {
+    const res = await fetch(`${API_BASE_URL}?action=login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({ password: value })
+    });
 
-        loginView.classList.add("hidden");
-        protectedContent.classList.remove("hidden");
-        passwordInput.value = "";
-        loginMessage.textContent = "";
-        loginMessage.classList.remove("error", "ok");
+    const text = await res.text();
 
-        fetchEntriesFromServer();
-        fetchProjectsConfigFromServer();
-        fetchWorkDivisionFromServer();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      loginMessage.textContent = "Respuesta no válida del servidor: " + text.slice(0, 180);
+      loginMessage.classList.add("error");
+      return;
+    }
+
+    if (data && data.success) {
+      if (rememberPassword && rememberPassword.checked) {
+        setRememberLogin(true);
       } else {
-        loginMessage.textContent = "Contraseña incorrecta.";
-        loginMessage.classList.remove("ok");
-        loginMessage.classList.add("error");
-        passwordInput.value = "";
-        passwordInput.focus();
         setRememberLogin(false);
       }
-    })
-    .catch(err => {
-      console.error(err);
-      loginMessage.textContent = "Error de conexión con el servidor.";
-      loginMessage.classList.remove("ok");
-      loginMessage.classList.add("error");
-    });
+
+      loginView.classList.add("hidden");
+      protectedContent.classList.remove("hidden");
+      passwordInput.value = "";
+      loginMessage.textContent = "";
+      loginMessage.classList.remove("error", "ok");
+
+      fetchEntriesFromServer();
+      fetchProjectsConfigFromServer();
+      fetchWorkDivisionFromServer();
+      return;
+    }
+
+    // Si falla, mostramos el motivo
+    loginMessage.textContent = data?.error ? `No entra: ${data.error}` : "Contraseña incorrecta.";
+    loginMessage.classList.add("error");
+    passwordInput.value = "";
+    passwordInput.focus();
+    setRememberLogin(false);
+
+  } catch (e) {
+    console.error(e);
+    loginMessage.textContent = "Error de conexión con el servidor.";
+    loginMessage.classList.add("error");
+  }
 }
+
 
 // =====================================
 //   Init
