@@ -1,9 +1,12 @@
 <?php
-// config.php
-$DB_HOST = "db5019170058.hosting-data.io";      // p.ej. db123456789.hosting-data.io
+$DB_HOST = "db5019170058.hosting-data.io";
 $DB_NAME = "dbs15054979";
 $DB_USER = "dbu971505";
 $DB_PASS = "Mayurni123!";
+
+// ✅ Contraseña de acceso a la app (hash)
+// (este hash corresponde a "Mayurni123!"; puedes regenerarlo con: password_hash('tuPass', PASSWORD_DEFAULT))
+$APP_PASS_HASH = '$2y$10$y3PPu47vYWuF.fGq2wA0BeEICPZhgw.B0BfZRkkFZrkUoQddgikJ6';
 
 function get_pdo() {
     global $DB_HOST, $DB_NAME, $DB_USER, $DB_PASS;
