@@ -1,3 +1,303 @@
+
+// =====================================
+// ISO semana (YYYY-Www) -> lunes (Date)
+// =====================================
+function isoWeekToMonday(isoWeek) {
+  if (!isoWeek || typeof isoWeek !== "string" || !isoWeek.includes("-W")) return null;
+  const [yStr, wStr] = isoWeek.split("-W");
+  const year = parseInt(yStr, 10);
+  const week = parseInt(wStr, 10);
+  if (isNaN(year) || isNaN(week)) return null;
+
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Day = jan4.getUTCDay() || 7;
+  const mondayWeek1 = new Date(jan4);
+  mondayWeek1.setUTCDate(jan4.getUTCDate() - (jan4Day - 1));
+
+  const monday = new Date(mondayWeek1);
+  monday.setUTCDate(mondayWeek1.getUTCDate() + (week - 1) * 7);
+  return monday;
+}
+
+
+// =====================================
+// Week value -> Month key (YYYY-MM)
+// Soporta: "YYYY-Www" y "YYYY-MM-DD"
+// =====================================
+function getMonthKeyFromWeekValue(weekValue) {
+  if (!weekValue) return null;
+  const v = String(weekValue).trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    return v.slice(0, 7);
+  }
+
+  if (/^\d{4}-W\d{2}$/.test(v)) {
+    const monday = isoWeekToMonday(v);
+    if (!monday) return null;
+    const yyyy = monday.getUTCFullYear();
+    const mm = String(monday.getUTCMonth() + 1).padStart(2, "0");
+    return `${yyyy}-${mm}`;
+  }
+
+  return null;
+}
+
+function formatWeekStart(weekValue) {
+  if (!weekValue) return "";
+  const v = String(weekValue).trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const d = new Date(v + "T00:00:00");
+    if (isNaN(d.getTime())) return v;
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
+  }
+
+  if (/^\d{4}-W\d{2}$/.test(v)) {
+    const monday = isoWeekToMonday(v);
+    if (!monday) return v;
+    const d = new Date(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate());
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${dd}/${mm}/${yy}`;
+  }
+
+  return v;
+}
+
+
+// ==============================
+// Popup editar registro (Semana + Horas)
+// ==============================
+function showEditEntryPopup(entry, onConfirm) {
+  const existing = document.getElementById("editEntryOverlay");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "editEntryOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.35)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+  overlay.style.padding = "16px";
+
+  const box = document.createElement("div");
+  box.style.maxWidth = "460px";
+  box.style.width = "100%";
+  box.style.background = "#ffffff";
+  box.style.borderRadius = "14px";
+  box.style.boxShadow = "0 18px 60px rgba(0,0,0,0.25)";
+  box.style.padding = "16px";
+
+  const title = document.createElement("div");
+  title.textContent = "Editar registro";
+  title.style.fontSize = "18px";
+  title.style.fontWeight = "700";
+  title.style.marginBottom = "12px";
+
+  const form = document.createElement("div");
+  form.style.display = "grid";
+  form.style.gridTemplateColumns = "1fr 1fr";
+  form.style.gap = "10px";
+
+  const weekWrap = document.createElement("div");
+  const weekLbl = document.createElement("div");
+  weekLbl.textContent = "Semana";
+  weekLbl.style.fontSize = "13px";
+  weekLbl.style.marginBottom = "6px";
+  const weekInp = document.createElement("input");
+  weekInp.type = "week";
+  weekInp.style.width = "100%";
+  weekInp.style.fontSize = "16px";
+
+  // Prefill: si entry.week es fecha, la convertimos; si ya es YYYY-Www, la usamos.
+  const w = (entry.week || "").toString().trim();
+  weekInp.value = /^\d{4}-W\d{2}$/.test(w) ? w : (dateStrToIsoWeek(w) || "");
+  weekWrap.appendChild(weekLbl);
+  weekWrap.appendChild(weekInp);
+
+  const hoursWrap = document.createElement("div");
+  const hoursLbl = document.createElement("div");
+  hoursLbl.textContent = "Horas";
+  hoursLbl.style.fontSize = "13px";
+  hoursLbl.style.marginBottom = "6px";
+  const hoursInp = document.createElement("input");
+  hoursInp.type = "number";
+  hoursInp.step = "0.25";
+  hoursInp.min = "0";
+  hoursInp.style.width = "100%";
+  hoursInp.style.fontSize = "16px";
+  hoursInp.value = (entry.hours ?? "").toString();
+  hoursWrap.appendChild(hoursLbl);
+  hoursWrap.appendChild(hoursInp);
+
+  form.appendChild(weekWrap);
+  form.appendChild(hoursWrap);
+
+  const hint = document.createElement("div");
+  hint.style.marginTop = "10px";
+  hint.style.fontSize = "13px";
+  hint.style.color = "#374151";
+  hint.textContent = "Se mostrará como primer día de la semana (lunes).";
+
+  const btnRow = document.createElement("div");
+  btnRow.style.display = "flex";
+  btnRow.style.justifyContent = "flex-end";
+  btnRow.style.gap = "10px";
+  btnRow.style.marginTop = "14px";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "btn-secondary";
+  cancelBtn.textContent = "Cancelar";
+
+  const okBtn = document.createElement("button");
+  okBtn.type = "button";
+  okBtn.className = "btn-primary";
+  okBtn.textContent = "Guardar";
+
+  function close(){ overlay.remove(); }
+
+  cancelBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+  okBtn.addEventListener("click", () => {
+    const newWeek = (weekInp.value || "").trim();
+    const raw = (hoursInp.value || "").toString().replace(",", ".");
+    const hours = parseFloat(raw);
+
+    if (!/^\d{4}-W\d{2}$/.test(newWeek)) {
+      alert("Selecciona una semana válida.");
+      return;
+    }
+    if (isNaN(hours) || hours < 0) {
+      alert("Horas no válidas.");
+      return;
+    }
+    close();
+    onConfirm({ week: newWeek, hours });
+  });
+
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(okBtn);
+
+  box.appendChild(title);
+  box.appendChild(form);
+  box.appendChild(hint);
+  box.appendChild(btnRow);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  // focus
+  weekInp.focus();
+}
+
+
+
+
+// =====================================
+// "YYYY-MM-DD" -> "YYYY-Www"
+// =====================================
+function dateStrToIsoWeek(dateStr) {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return null;
+
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  const yyyy = date.getUTCFullYear();
+  const ww = String(weekNo).padStart(2, "0");
+  return `${yyyy}-W${ww}`;
+}
+
+
+
+
+
+
+
+
+// ==============================
+// Popup de éxito (Horas guardadas)
+// ==============================
+function showSuccessPopup(text = "Horas guardadas correctamente") {
+  // Evitar duplicados
+  const existing = document.getElementById("successPopupOverlay");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "successPopupOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.35)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+  overlay.style.padding = "16px";
+
+  const box = document.createElement("div");
+  box.style.maxWidth = "420px";
+  box.style.width = "100%";
+  box.style.background = "#ffffff";
+  box.style.borderRadius = "14px";
+  box.style.boxShadow = "0 18px 60px rgba(0,0,0,0.25)";
+  box.style.padding = "18px 16px";
+
+  const title = document.createElement("div");
+  title.textContent = "✅";
+  title.style.fontSize = "28px";
+  title.style.lineHeight = "1";
+  title.style.marginBottom = "10px";
+
+  const msg = document.createElement("div");
+  msg.textContent = text;
+  msg.style.fontSize = "16px";
+  msg.style.color = "#111827";
+  msg.style.marginBottom = "14px";
+
+  const btnRow = document.createElement("div");
+  btnRow.style.display = "flex";
+  btnRow.style.justifyContent = "flex-end";
+  btnRow.style.gap = "10px";
+
+  const okBtn = document.createElement("button");
+  okBtn.type = "button";
+  okBtn.textContent = "Confirmar";
+  okBtn.className = "btn-primary";
+  okBtn.style.padding = "8px 12px";
+
+  const close = () => overlay.remove();
+
+  okBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener("keydown", function escHandler(e){
+    if (e.key === "Escape") {
+      document.removeEventListener("keydown", escHandler);
+      close();
+    }
+  });
+
+  btnRow.appendChild(okBtn);
+  box.appendChild(title);
+  box.appendChild(msg);
+  box.appendChild(btnRow);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
 // ==============================
 //  Claves en localStorage
 // ==============================
@@ -209,7 +509,22 @@ function saveWorkers(workers) {
 }
 
 function loadCompanies() {
-  return loadFromStorage(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
+  let companies = loadFromStorage(STORAGE_KEYS.COMPANIES, DEFAULT_COMPANIES);
+
+  // ✅ Asegurar que "MANGO" aparece en filtros (antes de "General") sin tocar nada más
+  const hasMango = companies.some(c => String(c).toLowerCase() === "mango");
+  if (!hasMango) {
+    const idxGeneral = companies.findIndex(c => String(c).toLowerCase() === "general");
+    if (idxGeneral === -1) {
+      companies.push("MANGO");
+    } else {
+      companies.splice(idxGeneral, 0, "MANGO");
+    }
+    // Guardamos para que quede persistente
+    saveCompanies(companies);
+  }
+
+  return companies;
 }
 
 function saveCompanies(companies) {
@@ -1286,16 +1601,16 @@ function handleEditClick(id) {
   const entries = loadEntries();
   const entry = entries.find(e => e.id === id);
   if (!entry) return;
-  const current = entry.hours.toString().replace(".", ",");
-  const result = prompt("Introduce las nuevas horas:", current);
-  if (result === null) return;
-  const normalized = result.replace(",", ".");
-  const value = parseFloat(normalized);
-  if (isNaN(value) || value < 0) {
-    alert("Valor de horas no válido.");
-    return;
-  }
-  updateEntryHours(id, value);
+
+  showEditEntryPopup(entry, ({ week, hours }) => {
+    entry.week = week;     // guardamos en formato ISO week
+    entry.hours = hours;
+
+    saveEntries(entries);
+    if (!document.getElementById("projectsView").classList.contains("hidden")) {
+      renderCompanyView();
+    }
+  });
 }
 
 function handleDeleteClick(id) {
@@ -1403,6 +1718,7 @@ function handleSaveHours() {
   saveEntries(entries);
 
   showMessage("Horas guardadas correctamente.", "ok");
+  showSuccessPopup("Horas guardadas correctamente");
 
   hoursInput.value = "";
   refreshProjectFilterSelect();
@@ -1473,12 +1789,202 @@ function renderCompanyView(filter = {}) {
     let companyTotal = 0;
 
     projects.forEach(project => {
+      // Título de proyecto + botón 🐵 (añadir horas rápido)
       const h4 = document.createElement("h4");
-      h4.textContent = project;
       const projectColor = getProjectColor(project);
       h4.style.backgroundColor = projectColor;
       h4.style.color = "#111827";
+      h4.style.display = "flex";
+      h4.style.alignItems = "center";
+      h4.style.justifyContent = "space-between";
+      h4.style.gap = "8px";
+
+      const titleSpan = document.createElement("span");
+      titleSpan.textContent = project;
+
+      const monkeyBtn = document.createElement("button");
+      monkeyBtn.type = "button";
+      monkeyBtn.innerText = "🐵";
+      monkeyBtn.title = "Añadir horas a este proyecto";
+      monkeyBtn.setAttribute("aria-label", "Añadir horas");
+      monkeyBtn.style.display = "inline-flex";
+      monkeyBtn.style.alignItems = "center";
+      monkeyBtn.style.justifyContent = "center";
+      monkeyBtn.style.padding = "2px 6px";
+      monkeyBtn.style.fontSize = "16px";
+      monkeyBtn.style.lineHeight = "1";
+      monkeyBtn.style.minWidth = "26px";
+      monkeyBtn.style.height = "22px";
+      monkeyBtn.style.borderRadius = "999px";
+      monkeyBtn.style.border = "1px solid rgba(0,0,0,0.25)";
+      monkeyBtn.style.background = "rgba(255,255,255,0.75)";
+      monkeyBtn.style.color = "#111827";
+      monkeyBtn.style.cursor = "pointer";
+
+      h4.textContent = "";
+      h4.appendChild(titleSpan);
+      h4.appendChild(monkeyBtn);
       block.appendChild(h4);
+
+      // Panel desplegable para añadir horas (semana, como el resto de la app)
+      const monkeyPanel = document.createElement("div");
+      monkeyPanel.style.display = "none";
+      monkeyPanel.style.margin = "6px 0 10px 0";
+      monkeyPanel.style.padding = "10px";
+      monkeyPanel.style.border = "1px solid rgba(0,0,0,0.12)";
+      monkeyPanel.style.borderRadius = "10px";
+      monkeyPanel.style.background = "rgba(255,255,255,0.65)";
+
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.flexWrap = "wrap";
+      row.style.gap = "8px";
+      row.style.alignItems = "center";
+
+      const workerSel = document.createElement("select");
+      workerSel.style.minWidth = "180px";
+      const ph = document.createElement("option");
+      ph.value = "";
+      ph.textContent = "Elige monognomo";
+      ph.disabled = true;
+      ph.selected = true;
+      workerSel.appendChild(ph);
+
+      // Lista de monognomos: siempre todos
+      const workersList = loadWorkers();
+      workersList.forEach(w => {
+        const opt = document.createElement("option");
+        opt.value = w;
+        opt.textContent = w;
+        workerSel.appendChild(opt);
+      });
+
+      const weekInp = document.createElement("input");
+      weekInp.type = "week";
+
+      const hoursInp = document.createElement("input");
+      hoursInp.type = "number";
+      hoursInp.step = "0.25";
+      hoursInp.min = "0";
+      hoursInp.placeholder = "Horas";
+      hoursInp.style.width = "90px";
+
+      const addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "btn-primary";
+      addBtn.textContent = "Añadir";
+      addBtn.style.padding = "6px 10px";
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "btn-secondary";
+      closeBtn.textContent = "Cerrar";
+      closeBtn.style.padding = "6px 10px";
+
+      const msg = document.createElement("span");
+      msg.style.marginLeft = "6px";
+      msg.style.fontSize = "13px";
+
+      row.appendChild(workerSel);
+      row.appendChild(weekInp);
+      row.appendChild(hoursInp);
+      row.appendChild(addBtn);
+      row.appendChild(closeBtn);
+      row.appendChild(msg);
+
+      monkeyPanel.appendChild(row);
+      block.appendChild(monkeyPanel);
+
+      monkeyBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        monkeyPanel.style.display = (monkeyPanel.style.display === "none") ? "block" : "none";
+        msg.textContent = "";
+      });
+
+      closeBtn.addEventListener("click", () => {
+        monkeyPanel.style.display = "none";
+        msg.textContent = "";
+      });
+
+      addBtn.addEventListener("click", async () => {
+        const worker = workerSel.value;
+        const week = weekInp.value;
+        const raw = (hoursInp.value || "").toString().replace(",", ".");
+        const hours = parseFloat(raw);
+
+        if (!worker) {
+          msg.textContent = "Elige monognomo.";
+          msg.style.color = "#b91c1c";
+          return;
+        }
+        if (!week || !week.includes("-W")) {
+          msg.textContent = "Elige semana.";
+          msg.style.color = "#b91c1c";
+          return;
+        }
+        if (isNaN(hours) || hours <= 0) {
+          msg.textContent = "Horas no válidas.";
+          msg.style.color = "#b91c1c";
+          return;
+        }
+
+        // Añadimos en local y sincronizamos usando las funciones existentes de la app
+        const entries2 = loadEntries();
+        entries2.push({
+          id: Date.now(),
+          worker,
+          company,
+          project,
+          week,
+          hours
+        });
+        saveEntries(entries2);
+
+        msg.textContent = "Sincronizando…";
+        msg.style.color = "#111827";
+
+        try {
+          let ok = true;
+          if (typeof syncEntriesToServer === "function") {
+            const r = await syncEntriesToServer();
+            // Algunos flujos no devuelven boolean; tratamos undefined como OK provisional
+            ok = (typeof r === "boolean") ? r : true;
+          }
+
+          // Verificación: recargamos desde servidor y comprobamos si el registro existe
+          if (typeof fetchEntriesFromServer === "function") {
+            await fetchEntriesFromServer();
+          }
+
+          // Comprobación contra entries actuales (localStorage) para evitar falsos negativos
+          const latest = loadEntries();
+          const exists = latest.some(en =>
+            en.worker === worker &&
+            en.company === company &&
+            en.project === project &&
+            en.week === week &&
+            Number(en.hours) === Number(hours)
+          );
+
+          if (!ok && !exists) {
+            msg.textContent = "No se pudo sincronizar. Reintenta.";
+            msg.style.color = "#b91c1c";
+            return;
+          }
+
+        } catch (e) {
+          console.error(e);
+          msg.textContent = "Error al sincronizar.";
+          msg.style.color = "#b91c1c";
+          return;
+        }
+
+        msg.textContent = "Añadido ✅";
+        msg.style.color = "#065f46";
+        hoursInp.value = "";
+        monkeyPanel.style.display = "none";
+        if (typeof fetchEntriesFromServer === "function") fetchEntriesFromServer();
+      });
 
       const table = document.createElement("table");
       const thead = document.createElement("thead");
@@ -1490,45 +1996,76 @@ function renderCompanyView(filter = {}) {
 
       let projectTotal = 0;
 
-      grouped[company][project].forEach(entry => {
-        const tr = document.createElement("tr");
-        tr.dataset.id = entry.id;
-
-        const tdWorker = createWorkerCell(entry.worker);
-        tr.appendChild(tdWorker);
-
-        const tdWeek = document.createElement("td");
-        tdWeek.textContent = formatWeekDisplay(entry.week);
-        tr.appendChild(tdWeek);
-
-        const tdHours = document.createElement("td");
-        tdHours.textContent = String(entry.hours).replace(".", ",");
-        tr.appendChild(tdHours);
-
-        const tdActions = document.createElement("td");
-        const editBtn = document.createElement("button");
-        editBtn.className = "icon-btn edit";
-        editBtn.textContent = "✏️";
-        editBtn.title = "Editar horas";
-        editBtn.addEventListener("click", () => handleEditClick(entry.id));
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "icon-btn delete";
-        deleteBtn.textContent = "🗑️";
-        deleteBtn.title = "Borrar registro";
-        deleteBtn.addEventListener("click", () => handleDeleteClick(entry.id));
-
-        tdActions.appendChild(editBtn);
-        tdActions.appendChild(deleteBtn);
-        tr.appendChild(tdActions);
-
-        tbody.appendChild(tr);
-
-        const h = Number(entry.hours) || 0;
-        projectTotal += h;
+      // Unificar fichajes por trabajador dentro del mismo proyecto (celda con rowspan)
+      const byWorker = {};
+      (grouped[company][project] || []).forEach(entry => {
+        const w = entry.worker || "";
+        if (!byWorker[w]) byWorker[w] = [];
+        byWorker[w].push(entry);
       });
 
-      const trTotal = document.createElement("tr");
+      const workerNames = Object.keys(byWorker).sort((a,b) => a.localeCompare(b,'es'));
+      workerNames.forEach(workerName => {
+        const list = byWorker[workerName];
+
+        // Ordenar por semana (YYYY-Wxx) o por texto
+        list.sort((e1,e2) => String(e1.week || "").localeCompare(String(e2.week || ""), 'es'));
+
+        list.forEach((entry, idx) => {
+          const tr = document.createElement("tr");
+          tr.dataset.id = entry.id;
+
+          if (idx === 0) {
+            const tdWorker = createWorkerCell(workerName);
+            // rowspan puede no funcionar si hay estilos 'flex' en filas; lo dejamos igualmente
+            tdWorker.rowSpan = list.length;
+            tdWorker.setAttribute("rowspan", String(list.length));
+            tr.appendChild(tdWorker);
+          } else {
+            // Mantener alineación de columnas aunque el CSS rompa rowspan:
+            // insertamos una celda 'fantasma' (invisible) para ocupar la columna Trabajador.
+            const tdSpacer = document.createElement("td");
+            tdSpacer.className = "worker-cell";
+            tdSpacer.style.visibility = "hidden";
+            tdSpacer.style.border = "0";
+            tdSpacer.style.padding = "0";
+            tdSpacer.textContent = "•";
+            tr.appendChild(tdSpacer);
+          }
+
+          const tdWeek = document.createElement("td");
+          tdWeek.textContent = formatWeekStart(entry.week || "");
+          tr.appendChild(tdWeek);
+
+          const tdHours = document.createElement("td");
+          tdHours.textContent = (Number(entry.hours) || 0).toString();
+          tr.appendChild(tdHours);
+
+          const tdActions = document.createElement("td");
+
+          const editBtn = document.createElement("button");
+          editBtn.className = "icon-btn";
+          editBtn.textContent = "✏️";
+          editBtn.title = "Editar";
+          editBtn.addEventListener("click", () => handleEditClick(entry.id));
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "icon-btn danger";
+          deleteBtn.textContent = "🗑️";
+          deleteBtn.title = "Eliminar";
+          deleteBtn.addEventListener("click", () => handleDeleteClick(entry.id));
+
+          tdActions.appendChild(editBtn);
+          tdActions.appendChild(deleteBtn);
+          tr.appendChild(tdActions);
+
+          tbody.appendChild(tr);
+
+          const h = Number(entry.hours) || 0;
+          projectTotal += h;
+        });
+      });
+const trTotal = document.createElement("tr");
       trTotal.className = "total-row";
 
       const tdLabel = document.createElement("td");
