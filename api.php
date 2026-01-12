@@ -1,69 +1,109 @@
 <?php
-// api.php
-header("Content-Type: application/json; charset=utf-8");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+// =======================================
+// api.php — FINAL DEFINITIVO
+// Login blindado (constante o variable)
+// =======================================
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
+ini_set('display_errors', 0);
+error_reporting(0);
+header("Content-Type: application/json; charset=utf-8");
 
 require_once __DIR__ . '/config.php';
 
-$action = isset($_GET['action']) ? $_GET['action'] : '';
+$action = $_GET['action'] ?? "";
 
-try {
-    $pdo = get_pdo();
+// =======================================
+// LOGIN (NO USA BD, NO SE ROMPE)
+// Acepta APP_PASS_HASH como:
+//  - define('APP_PASS_HASH', '...')
+//  - $APP_PASS_HASH = '...'
+// =======================================
+if ($action === "login") {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $password = $data["password"] ?? "";
 
-    switch ($action) {
-        
-    case 'login':
-        login($pdo);
-        break;
-case 'list_entries':
-            list_entries($pdo);
-            break;
+    $hash = null;
 
-        case 'save_all_entries':
-            save_all_entries($pdo);
-            break;
-
-        case 'get_projects_config':
-            get_projects_config($pdo);
-            break;
-
-        case 'save_projects_config':
-            save_projects_config($pdo);
-            break;
-
-        default:
-            http_response_code(400);
-            echo json_encode([
-                "success" => false,
-                "error"   => "Acción no válida"
-            ]);
+    // 1️⃣ Preferimos CONSTANTE
+    if (defined("APP_PASS_HASH") && APP_PASS_HASH) {
+        $hash = APP_PASS_HASH;
+    }
+    // 2️⃣ Fallback a VARIABLE antigua
+    elseif (isset($GLOBALS["APP_PASS_HASH"]) && $GLOBALS["APP_PASS_HASH"]) {
+        $hash = $GLOBALS["APP_PASS_HASH"];
     }
 
+    if (!$hash) {
+        echo json_encode([
+            "success" => false,
+            "error" => "APP_PASS_HASH_NOT_SET"
+        ]);
+        exit;
+    }
+
+    echo json_encode([
+        "success" => password_verify($password, $hash)
+    ]);
+    exit;
+}
+
+// =======================================
+// CONEXIÓN BD (solo para lo demás)
+// =======================================
+try {
+    $pdo = get_pdo();
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "error"   => $e->getMessage()
+        "error" => "DB_CONNECTION_FAILED"
     ]);
+    exit;
 }
 
-/**
- *  HORAS (ENTRIES)
- */
+// =======================================
+// ROUTER
+// =======================================
+switch ($action) {
+
+    case "list_entries":
+        list_entries($pdo);
+        break;
+
+    case "save_all_entries":
+        save_all_entries($pdo);
+        break;
+
+    case "save_projects_config":
+        save_projects_config($pdo);
+        break;
+
+    case "get_projects_config":
+        get_projects_config($pdo);
+        break;
+
+    case "delete_project":
+        delete_project($pdo);
+        break;
+
+    default:
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "error" => "UNKNOWN_ACTION"
+        ]);
+}
+
+// =======================================
+// FUNCIONES
+// =======================================
 
 function list_entries(PDO $pdo) {
-    $sql = "SELECT id, worker, company, project, week, hours, created_at
-            FROM entries
-            ORDER BY company, project, worker, week, id";
-    $stmt = $pdo->query($sql);
-    $rows = $stmt->fetchAll();
+    $rows = $pdo->query(
+        "SELECT id, worker, company, project, week, hours
+         FROM entries
+         ORDER BY id ASC"
+    )->fetchAll();
 
     echo json_encode([
         "success" => true,
@@ -71,280 +111,289 @@ function list_entries(PDO $pdo) {
     ]);
 }
 
+// ---------------------------------------
 function save_all_entries(PDO $pdo) {
-    $raw = file_get_contents("php://input");
-    $data = json_decode($raw, true);
+    $data = json_decode(file_get_contents("php://input"), true);
 
-    if (!is_array($data) || !isset($data["entries"]) || !is_array($data["entries"])) {
+    if (!isset($data["entries"])) {
         http_response_code(400);
-        echo json_encode([
-            "success" => false,
-            "error"   => "JSON inválido"
-        ]);
+        echo json_encode(["success" => false]);
         return;
     }
 
-    $entries = $data["entries"];
+    try {
+        $pdo->beginTransaction();
+        $pdo->exec("DELETE FROM entries");
 
-    $pdo->beginTransaction();
+        $stmt = $pdo->prepare(
+            "INSERT INTO entries
+             (id, worker, company, project, week, hours, created_at)
+             VALUES
+             (:id,:worker,:company,:project,:week,:hours,NOW())"
+        );
 
-    $pdo->exec("TRUNCATE TABLE entries");
+        foreach ($data["entries"] as $e) {
+            if (!isset($e["id"])) continue;
 
-    $sql = "INSERT INTO entries (worker, company, project, week, hours, created_at)
-            VALUES (:worker, :company, :project, :week, :hours, :created_at)";
-    $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ":id"      => $e["id"],
+                ":worker"  => $e["worker"]  ?? "",
+                ":company" => $e["company"] ?? "",
+                ":project" => $e["project"] ?? "",
+                ":week"    => $e["week"]    ?? "",
+                ":hours"   => $e["hours"]   ?? 0
+            ]);
+        }
 
-    foreach ($entries as $e) {
-        $worker = isset($e["worker"]) ? $e["worker"] : "";
-        $company = isset($e["company"]) ? $e["company"] : "";
-        $project = isset($e["project"]) ? $e["project"] : "";
-        $week = isset($e["week"]) ? $e["week"] : "";
-        $hours = isset($e["hours"]) ? floatval($e["hours"]) : 0;
-        $created_at = isset($e["created_at"]) ? $e["created_at"] : date('Y-m-d H:i:s');
+        $pdo->commit();
+        echo json_encode(["success" => true]);
 
-        $stmt->execute([
-            ":worker"     => $worker,
-            ":company"    => $company,
-            ":project"    => $project,
-            ":week"       => $week,
-            ":hours"      => $hours,
-            ":created_at" => $created_at
-        ]);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(500);
+        echo json_encode(["success" => false, "error" => "SAVE_FAILED"]);
+    }
+}
+
+// =======================================
+// PROYECTOS (leer desde BD real)
+// =======================================
+
+function save_projects_config(PDO $pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (!is_array($data)) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "error" => "INVALID_JSON"]);
+        return;
     }
 
-    $pdo->commit();
+    $projectsByCompany = $data["projectsByCompany"] ?? null;
+    $projectWorkers    = $data["projectWorkers"] ?? [];
+
+    if (!is_array($projectsByCompany)) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "error" => "projectsByCompany missing"]);
+        return;
+    }
+    if (!is_array($projectWorkers)) {
+        $projectWorkers = [];
+    }
+
+    // 1) Recolectar conjunto de proyectos (company + name)
+    $projectSet = [];
+    foreach ($projectsByCompany as $company => $monthsMap) {
+        if (!is_array($monthsMap)) continue;
+        foreach ($monthsMap as $monthKey => $list) {
+            if (!is_array($list)) continue;
+            foreach ($list as $projectName) {
+                $c = trim((string)$company);
+                $p = trim((string)$projectName);
+                if ($c === "" || $p === "") continue;
+                $projectSet[$c . "||" . $p] = [$c, $p];
+            }
+        }
+    }
+    foreach ($projectWorkers as $company => $projectsMap) {
+        if (!is_array($projectsMap)) continue;
+        foreach ($projectsMap as $projectName => $workers) {
+            $c = trim((string)$company);
+            $p = trim((string)$projectName);
+            if ($c === "" || $p === "") continue;
+            $projectSet[$c . "||" . $p] = [$c, $p];
+        }
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        // 2) Asegurar proyectos en tabla projects y construir ids
+        $getId = $pdo->prepare("SELECT id FROM projects WHERE company = ? AND name = ? LIMIT 1");
+        $ins   = $pdo->prepare("INSERT INTO projects (company, name) VALUES (?, ?)");
+        $idByKey = [];
+
+        foreach ($projectSet as $key => $pair) {
+            [$c, $p] = $pair;
+            $getId->execute([$c, $p]);
+            $pid = $getId->fetchColumn();
+            if (!$pid) {
+                $ins->execute([$c, $p]);
+                $pid = $pdo->lastInsertId();
+            }
+            $idByKey[$key] = (int)$pid;
+        }
+
+        // 3) Reescribir relaciones (solo tablas de relación)
+        $pdo->exec("DELETE FROM project_months");
+        $pdo->exec("DELETE FROM project_workers");
+
+        $insMonth = $pdo->prepare("INSERT INTO project_months (project_id, month_key) VALUES (?, ?)");
+        foreach ($projectsByCompany as $company => $monthsMap) {
+            if (!is_array($monthsMap)) continue;
+            foreach ($monthsMap as $monthKey => $list) {
+                if (!is_array($list)) continue;
+                $mk = trim((string)$monthKey);
+                if ($mk === "") continue;
+                foreach ($list as $projectName) {
+                    $c = trim((string)$company);
+                    $p = trim((string)$projectName);
+                    if ($c === "" || $p === "") continue;
+                    $key = $c . "||" . $p;
+                    if (!isset($idByKey[$key])) continue;
+                    $insMonth->execute([$idByKey[$key], $mk]);
+                }
+            }
+        }
+
+        $insWorker = $pdo->prepare("INSERT INTO project_workers (project_id, worker) VALUES (?, ?)");
+        foreach ($projectWorkers as $company => $projectsMap) {
+            if (!is_array($projectsMap)) continue;
+            foreach ($projectsMap as $projectName => $workers) {
+                if (!is_array($workers)) continue;
+                $c = trim((string)$company);
+                $p = trim((string)$projectName);
+                if ($c === "" || $p === "") continue;
+                $key = $c . "||" . $p;
+                if (!isset($idByKey[$key])) continue;
+                foreach ($workers as $w) {
+                    $worker = trim((string)$w);
+                    if ($worker === "") continue;
+                    $insWorker->execute([$idByKey[$key], $worker]);
+                }
+            }
+        }
+
+        $pdo->commit();
+        echo json_encode(["success" => true]);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(500);
+        echo json_encode(["success" => false, "error" => "SAVE_PROJECTS_FAILED"]);
+    }
+}
+
+
+function get_projects_config(PDO $pdo) {
+
+    // --- PROYECTOS POR EMPRESA Y MES ---
+    $projectsByCompany = [];
+
+    $sql = "
+        SELECT
+            p.company,
+            p.name AS project,
+            pm.month_key
+        FROM projects p
+        JOIN project_months pm ON pm.project_id = p.id
+        ORDER BY p.company, pm.month_key, p.name
+    ";
+
+    foreach ($pdo->query($sql) as $row) {
+        $c = $row["company"];
+        $m = $row["month_key"];
+        $p = $row["project"];
+
+        if (!isset($projectsByCompany[$c])) {
+            $projectsByCompany[$c] = [];
+        }
+        if (!isset($projectsByCompany[$c][$m])) {
+            $projectsByCompany[$c][$m] = [];
+        }
+        if (!in_array($p, $projectsByCompany[$c][$m], true)) {
+            $projectsByCompany[$c][$m][] = $p;
+        }
+    }
+
+    // --- TRABAJADORES POR PROYECTO ---
+    $projectWorkers = [];
+
+    $sql = "
+        SELECT
+            p.company,
+            p.name AS project,
+            pw.worker
+        FROM project_workers pw
+        JOIN projects p ON p.id = pw.project_id
+        ORDER BY p.company, p.name
+    ";
+
+    foreach ($pdo->query($sql) as $row) {
+        $c = $row["company"];
+        $p = $row["project"];
+        $w = $row["worker"];
+
+        if (!isset($projectWorkers[$c])) {
+            $projectWorkers[$c] = [];
+        }
+        if (!isset($projectWorkers[$c][$p])) {
+            $projectWorkers[$c][$p] = [];
+        }
+        if (!in_array($w, $projectWorkers[$c][$p], true)) {
+            $projectWorkers[$c][$p][] = $w;
+        }
+    }
 
     echo json_encode([
         "success" => true,
-        "count"   => count($entries)
+        "projectsByCompany" => $projectsByCompany,
+        "projectWorkers"    => $projectWorkers
     ]);
 }
 
-/**
- *  CONFIGURACIÓN DE PROYECTOS (projects, project_months, project_workers)
- *
- *  Estructura que espera/devuelve:
- *  projectsByCompany: {
- *     "Monognomo": {
- *        "2025-03": ["Proyecto A", "Proyecto B"],
- *        "2025-04": ["Proyecto C"]
- *     },
- *     "Neozink": {
- *        "2025-03": ["Proyecto X"]
- *     }
- *  }
- *
- *  projectWorkers: {
- *     "Monognomo": {
- *        "Proyecto A": ["Alba", "Buster"],
- *        "Proyecto B": ["Sara"]
- *     },
- *     "Neozink": {
- *        "Proyecto X": ["Castri"]
- *     }
- *  }
- */
+// =======================================
+// BORRAR PROYECTO (persistente)
+// =======================================
+function delete_project(PDO $pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
 
-function get_projects_config(PDO $pdo) {
-    // Obtenemos proyectos + meses
-    $sql = "SELECT p.id, p.company, p.name, pm.month_key
-            FROM projects p
-            LEFT JOIN project_months pm ON pm.project_id = p.id
-            ORDER BY p.company, p.name, pm.month_key";
-    $stmt = $pdo->query($sql);
-    $rows = $stmt->fetchAll();
+    $company = trim((string)($data["company"] ?? ""));
+    $project = trim((string)($data["project"] ?? ""));
 
-    $projectsByCompany = [];
-
-    foreach ($rows as $row) {
-        $company   = $row["company"];
-        $name      = $row["name"];
-        $month_key = $row["month_key"];
-
-        if (!isset($projectsByCompany[$company])) {
-            $projectsByCompany[$company] = [];
-        }
-        if ($month_key !== null) {
-            if (!isset($projectsByCompany[$company][$month_key])) {
-                $projectsByCompany[$company][$month_key] = [];
-            }
-            if (!in_array($name, $projectsByCompany[$company][$month_key], true)) {
-                $projectsByCompany[$company][$month_key][] = $name;
-            }
-        }
-    }
-
-    // Obtenemos monognomos por proyecto
-    $sql = "SELECT p.id, p.company, p.name, pw.worker
-            FROM projects p
-            LEFT JOIN project_workers pw ON pw.project_id = p.id
-            ORDER BY p.company, p.name, pw.worker";
-    $stmt = $pdo->query($sql);
-    $rows = $stmt->fetchAll();
-
-    $projectWorkers = [];
-
-    foreach ($rows as $row) {
-        $company = $row["company"];
-        $name    = $row["name"];
-        $worker  = $row["worker"];
-
-        if (!isset($projectWorkers[$company])) {
-            $projectWorkers[$company] = [];
-        }
-        if (!isset($projectWorkers[$company][$name])) {
-            $projectWorkers[$company][$name] = [];
-        }
-        if ($worker !== null && $worker !== "" &&
-            !in_array($worker, $projectWorkers[$company][$name], true)) {
-            $projectWorkers[$company][$name][] = $worker;
-        }
-    }
-
-    echo json_encode([
-        "success"          => true,
-        "projectsByCompany"=> $projectsByCompany,
-        "projectWorkers"   => $projectWorkers
-    ]);
-}
-
-function save_projects_config(PDO $pdo) {
-    $raw = file_get_contents("php://input");
-    $data = json_decode($raw, true);
-
-    if (
-        !is_array($data) ||
-        !isset($data["projectsByCompany"]) ||
-        !isset($data["projectWorkers"])
-    ) {
+    if ($company === "" || $project === "") {
         http_response_code(400);
-        echo json_encode([
-            "success" => false,
-            "error"   => "JSON inválido"
-        ]);
+        echo json_encode(["success" => false, "error" => "MISSING_FIELDS"]);
         return;
     }
 
-    $projectsByCompany = $data["projectsByCompany"];
-    $projectWorkers    = $data["projectWorkers"];
+    try {
+        // Buscar ID
+        $stmt = $pdo->prepare(
+            "SELECT id FROM projects WHERE company = :c AND name = :p LIMIT 1"
+        );
+        $stmt->execute([":c" => $company, ":p" => $project]);
+        $row = $stmt->fetch();
 
-    if (!is_array($projectsByCompany) || !is_array($projectWorkers)) {
-        http_response_code(400);
-        echo json_encode([
-            "success" => false,
-            "error"   => "Formato de configuración inválido"
-        ]);
-        return;
-    }
-
-    $pdo->beginTransaction();
-
-    // Limpiamos tablas
-    $pdo->exec("DELETE FROM project_workers");
-    $pdo->exec("DELETE FROM project_months");
-    $pdo->exec("DELETE FROM projects");
-
-    // Mapa para reutilizar ids: [company][projectName] => project_id
-    $projectIdMap = [];
-
-    // 1) Insertar proyectos y meses
-    $sqlInsertProject = "INSERT INTO projects (company, name)
-                         VALUES (:company, :name)";
-    $stmtProj = $pdo->prepare($sqlInsertProject);
-
-    $sqlInsertMonth = "INSERT INTO project_months (project_id, month_key)
-                       VALUES (:project_id, :month_key)";
-    $stmtMonth = $pdo->prepare($sqlInsertMonth);
-
-    foreach ($projectsByCompany as $company => $monthsMap) {
-        if (!is_array($monthsMap)) continue;
-
-        if (!isset($projectIdMap[$company])) {
-            $projectIdMap[$company] = [];
+        if (!$row) {
+            echo json_encode(["success" => false, "error" => "PROJECT_NOT_FOUND"]);
+            return;
         }
 
-        foreach ($monthsMap as $monthKey => $projectsList) {
-            if (!is_array($projectsList)) continue;
+        $pid = (int)$row["id"];
 
-            foreach ($projectsList as $projectName) {
-                if (!isset($projectIdMap[$company][$projectName])) {
-                    // Nuevo proyecto
-                    $stmtProj->execute([
-                        ":company" => $company,
-                        ":name"    => $projectName
-                    ]);
-                    $projectId = (int)$pdo->lastInsertId();
-                    $projectIdMap[$company][$projectName] = $projectId;
-                } else {
-                    $projectId = $projectIdMap[$company][$projectName];
-                }
+        $pdo->beginTransaction();
 
-                // Insertar mes si tiene formato correcto
-                if (preg_match('/^\d{4}-\d{2}$/', $monthKey)) {
-                    $stmtMonth->execute([
-                        ":project_id" => $projectId,
-                        ":month_key"  => $monthKey
-                    ]);
-                }
-            }
-        }
+        // Relaciones
+        $stmt = $pdo->prepare("DELETE FROM project_months WHERE project_id = :pid");
+        $stmt->execute([":pid" => $pid]);
+
+        $stmt = $pdo->prepare("DELETE FROM project_workers WHERE project_id = :pid");
+        $stmt->execute([":pid" => $pid]);
+
+        // Proyecto
+        $stmt = $pdo->prepare("DELETE FROM projects WHERE id = :pid");
+        $stmt->execute([":pid" => $pid]);
+
+        // Horas asociadas (limpieza)
+        $stmt = $pdo->prepare(
+            "DELETE FROM entries WHERE company = :c AND project = :p"
+        );
+        $stmt->execute([":c" => $company, ":p" => $project]);
+
+        $pdo->commit();
+        echo json_encode(["success" => true]);
+
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        http_response_code(500);
+        echo json_encode(["success" => false, "error" => "DELETE_FAILED"]);
     }
-
-    // 2) Insertar monognomos por proyecto
-    $sqlInsertWorker = "INSERT INTO project_workers (project_id, worker)
-                        VALUES (:project_id, :worker)";
-    $stmtWorker = $pdo->prepare($sqlInsertWorker);
-
-    foreach ($projectWorkers as $company => $projectsMap) {
-        if (!is_array($projectsMap)) continue;
-        if (!isset($projectIdMap[$company])) continue;
-
-        foreach ($projectsMap as $projectName => $workersList) {
-            if (!is_array($workersList)) continue;
-            if (!isset($projectIdMap[$company][$projectName])) {
-                // Proyecto sin meses pero con trabajadores -> creamos entrada
-                $stmtProj->execute([
-                    ":company" => $company,
-                    ":name"    => $projectName
-                ]);
-                $projectId = (int)$pdo->lastInsertId();
-                $projectIdMap[$company][$projectName] = $projectId;
-            } else {
-                $projectId = $projectIdMap[$company][$projectName];
-            }
-
-            foreach ($workersList as $worker) {
-                $worker = trim($worker);
-                if ($worker === "") continue;
-
-                $stmtWorker->execute([
-                    ":project_id" => $projectId,
-                    ":worker"     => $worker
-                ]);
-            }
-        }
-    }
-
-    $pdo->commit();
-
-    echo json_encode([
-        "success" => true
-    ]);
-}
-
-function login(PDO $pdo) {
-    // Password hash lives in config.php as $APP_PASS_HASH
-    global $APP_PASS_HASH;
-
-    $raw = file_get_contents("php://input");
-    $data = json_decode($raw, true);
-    $password = $data["password"] ?? "";
-
-    if (!isset($APP_PASS_HASH) || !$APP_PASS_HASH) {
-        echo json_encode(["success" => false, "error" => "APP_PASS_HASH_not_set"]);
-        return;
-    }
-
-    $ok = password_verify($password, $APP_PASS_HASH);
-    echo json_encode(["success" => $ok]);
 }

@@ -66,8 +66,22 @@ function formatWeekStart(weekValue) {
     return `${dd}/${mm}/${yy}`;
   }
 
+
+function updateWeekHint() {
+  const weekInput = document.getElementById("weekInput");
+  const hintEl = document.getElementById("weekHint");
+  if (!weekInput || !hintEl) return;
+  const v = (weekInput.value || "").trim();
+  if (!v) {
+    hintEl.textContent = "";
+    return;
+  }
+  hintEl.textContent = "Semana comienza: " + formatWeekStart(v);
+}
   return v;
 }
+
+
 
 
 // ==============================
@@ -323,8 +337,8 @@ let manageProjectsFilterMonth = "";
 //  Backend IONOS (MySQL)
 // ==============================
 
-const API_BASE_URL = "https://registrohoras.monognomo.com/api.php";
-const WORK_DIVISION_API_URL = "https://registrohoras.monognomo.com/work_division_api.php";
+const API_BASE_URL = "api.php";
+const WORK_DIVISION_API_URL = "work_division_api.php";
 
 let entriesCache = [];           // horas
 let projectsByCompanyCache = {}; // proyectos por empresa y mes
@@ -573,6 +587,18 @@ function saveEntries(entries) {
   syncEntriesToServer(entriesCache);
 }
 
+
+async function deleteEntryOnServer(id) {
+  try {
+    const url = `${API_BASE_URL}?action=delete_entry&id=${encodeURIComponent(id)}`;
+    const res = await fetch(url, { method: "GET" });
+    const data = await res.json().catch(() => null);
+    return !!(data && data.success);
+  } catch (e) {
+    return false;
+  }
+}
+
 async function syncEntriesToServer(entries) {
   try {
     await fetch(`${API_BASE_URL}?action=save_all_entries`, {
@@ -660,6 +686,19 @@ async function fetchProjectsConfigFromServer() {
   renderManageProjectsView();
   refreshProjectFilterSelect();
   refreshWorkDivisionEventSelect();
+}
+
+
+async function deleteProjectOnServer(company, project) {
+  const res = await fetch("api.php?action=delete_project", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ company, project })
+  });
+  const text = await res.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch (e) { data = null; }
+  return !!(data && data.success);
 }
 
 async function syncProjectsConfigToServer(projectsByCompany, projectWorkers) {
@@ -860,6 +899,9 @@ function createWorkerCell(workerName) {
 
 function getMonthKeyFromWeek(weekValue) {
   if (!weekValue) return null;
+  const v0 = String(weekValue).trim();
+  // Soporta formato nuevo YYYY-MM-DD (guardamos el lunes de la semana)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v0)) return v0.slice(0, 7);
   const parts = weekValue.split("-W");
   if (parts.length !== 2) return null;
   const year = parseInt(parts[0], 10);
@@ -1588,13 +1630,31 @@ function updateEntryHours(id, newHours) {
   }
 }
 
-function deleteEntry(id) {
-  let entries = loadEntries();
-  entries = entries.filter(e => e.id !== id);
-  saveEntries(entries);
-  if (!document.getElementById("projectsView").classList.contains("hidden")) {
-    renderCompanyView();
+async function deleteEntry(id) {
+  const ok = confirm("¿Borrar este registro?");
+  if (!ok) return;
+
+  // 1) Borrar en local
+  entriesCache = (entriesCache || []).filter(e => String(e.id) !== String(id));
+  saveEntries(entriesCache);
+
+  // 2) Borrar en servidor (ID)
+  const serverOk = await deleteEntryOnServer(id);
+  if (!serverOk) {
+    
   }
+
+  // 3) Refrescar UI (sin errores aunque estés en otra pestaña)
+  try { renderEntriesList(); } catch(e) {}
+
+  // Si estás en "Todos los proyectos", re-aplicamos el filtro actual
+  try {
+    const pv = document.getElementById("projectsView");
+    if (pv && !pv.classList.contains("hidden")) {
+      if (typeof handleFilter === "function") handleFilter();
+      else if (typeof renderCompanyView === "function") renderCompanyView({});
+    }
+  } catch(e) {}
 }
 
 function handleEditClick(id) {
@@ -1619,7 +1679,7 @@ function handleDeleteClick(id) {
 }
 
 // borrar proyecto completo + sus entradas
-function deleteProject(company, project) {
+async function deleteProject(company, project) {
   if (
     !confirm(
       `¿Seguro que quieres borrar el proyecto "${project}" de "${getCompanyDisplayName(company)}" y todas sus horas asociadas en todos los meses?`
@@ -1628,6 +1688,14 @@ function deleteProject(company, project) {
     return;
   }
 
+
+
+  // ✅ Borrado persistente en BD (proyecto + meses + trabajadores + horas asociadas)
+  const okServer = await deleteProjectOnServer(company, project);
+  if (!okServer) {
+    alert("No se pudo borrar el proyecto en el servidor. Revisa conexión o BD.");
+    return;
+  }
   let entries = loadEntries();
   entries = entries.filter(e => !(e.company === company && e.project === project));
   saveEntries(entries);
@@ -1654,6 +1722,9 @@ function deleteProject(company, project) {
     }
     saveProjectWorkers(projectWorkers);
   }
+
+  // Re-cargar configuración desde servidor (la BD es la verdad)
+  await fetchProjectsConfigFromServer();
 
   renderCompanyView();
   renderManageProjectsView();
@@ -2099,6 +2170,51 @@ const trTotal = document.createElement("tr");
   globalTotalEl.textContent =
     "Total general de horas: " + globalTotal.toString().replace(".", ",");
   container.appendChild(globalTotalEl);
+
+  // ✅ NUEVO: Total por semana (solo cuando filtras por trabajador)
+  if (effectiveFilter.worker) {
+    const weekTotals = {};
+    filteredEntries.forEach(e => {
+      const w = (e.week || "").trim();
+      if (!w) return;
+      const h = Number(e.hours) || 0;
+      weekTotals[w] = (weekTotals[w] || 0) + h;
+    });
+
+    const weekSortValue = (w) => {
+      const v = String(w || "").trim();
+      if (/^\d{4}-W\d{2}$/.test(v)) {
+        const monday = isoWeekToMonday(v);
+        if (!monday) return 0;
+        return new Date(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate()).getTime();
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        const d = new Date(v + "T00:00:00");
+        return isNaN(d.getTime()) ? 0 : d.getTime();
+      }
+      return 0;
+    };
+
+    const weeks = Object.keys(weekTotals).sort((a, b) => weekSortValue(a) - weekSortValue(b));
+    if (weeks.length) {
+      const weeklyBox = document.createElement("div");
+      weeklyBox.className = "global-total";
+
+      const title = document.createElement("div");
+      title.style.fontWeight = "700";
+      title.style.marginBottom = "4px";
+      title.textContent = "Total por semana:";
+      weeklyBox.appendChild(title);
+
+      weeks.forEach(w => {
+        const row = document.createElement("div");
+        row.textContent = `${formatWeekStart(w)}: ${weekTotals[w].toString().replace(".", ",")}`;
+        weeklyBox.appendChild(row);
+      });
+
+      container.appendChild(weeklyBox);
+    }
+  }
 }
 
 // =====================================
@@ -2197,8 +2313,8 @@ function renderManageProjectsView() {
         deleteBtn.className = "icon-btn delete";
         deleteBtn.textContent = "🗑️ Borrar";
         deleteBtn.title = "Borrar proyecto de todos los meses";
-        deleteBtn.addEventListener("click", () =>
-          deleteProject(company, projectName)
+        deleteBtn.addEventListener("click", async () =>
+          await deleteProject(company, projectName)
         );
 
         tdActions.appendChild(editBtn);
@@ -3504,3 +3620,6 @@ function init() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
+
+try { updateWeekHint(); } catch (e) {}

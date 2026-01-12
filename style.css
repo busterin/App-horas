@@ -492,3 +492,97 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+
+
+/* ============================= */
+/* FIX móvil: filtros no desbordan */
+/* ============================= */
+.filters .field,
+.filters .field.small {
+  min-width: 0;
+}
+
+.filters select,
+.filters input {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* En pantallas pequeñas: cada filtro en su línea */
+@media (max-width: 520px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #filterBtn {
+    width: 100%;
+  }
+}
+
+/* Si el texto del proyecto es largo, que recorte con "..." */
+#filterProject {
+  text-overflow: ellipsis;
+}
+
+
+/* =========================
+   FIX MÓVIL (ultra-local): filtros de Mes/Semana en "Todos los proyectos"
+   Evita que el input desborde del recuadro blanco sin cambiar el estilo general
+========================= */
+#projectsView .filters .field.small{ min-width: 0; }
+#projectsView .filters #filterMonth,
+#projectsView .filters #filterWeek{
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   FIX MÓVIL: filtros siempre dentro del recuadro
+   (ultra-safe: solo limita anchos y min-width)
+========================================= */
+@media (max-width: 640px){
+  .filters{
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  .filters > *{
+    max-width: 100%;
+    min-width: 0;
+  }
+  .filters .field{
+    max-width: 100%;
+    min-width: 0;
+  }
+  .filters input,
+  .filters select,
+  .filters button{
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+/* =========================================
+   Ajuste extra: month/week no desbordan en móvil
+========================================= */
+@media (max-width: 640px){
+  .filters .field.small{
+    flex: 1 1 48%;
+    min-width: 0;
+  }
+  .filters input[type="month"],
+  .filters input[type="week"]{
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+@media (max-width: 420px){
+  .filters .field.small{
+    flex: 1 1 100%;
+  }
+}
+
